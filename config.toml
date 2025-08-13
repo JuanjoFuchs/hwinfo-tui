@@ -1,0 +1,45 @@
+[display]
+refresh_rate = 1.0      # seconds
+theme = "default"       # default/dark/matrix
+time_window = 300       # seconds of history to display
+
+[sensors]
+# Temperature thresholds (Celsius)
+cpu_temp_critical = 85
+cpu_temp_warning = 75
+gpu_temp_critical = 90
+gpu_temp_warning = 80
+
+# Usage thresholds (Percentage)
+cpu_usage_warning = 80
+cpu_usage_critical = 95
+memory_usage_warning = 80
+memory_usage_critical = 90
+
+# Power thresholds (Watts)
+cpu_power_warning = 100
+cpu_power_critical = 200
+gpu_power_warning = 250
+gpu_power_critical = 400
+
+[charts]
+default_type = "line"           # line/scatter/bar
+smooth_updates = true
+auto_scale = true
+max_data_points = 3600         # Maximum data points to retain
+dual_axis_threshold = 2        # Maximum different units allowed
+
+[ui]
+compact_mode_width = 100       # Terminal width threshold for compact mode
+compact_mode_height = 20       # Terminal height threshold for compact mode
+show_legend = true
+show_grid = true
+animation_speed = "normal"     # slow/normal/fast
+
+[alerts]
+enable_visual_alerts = true
+enable_audio_alerts = false
+blink_critical_values = true
+critical_color = "red"
+warning_color = "yellow"
+normal_color = "green"

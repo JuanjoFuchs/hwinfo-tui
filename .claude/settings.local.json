@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(chmod:*)",
+      "Bash(python -m hwinfo_tui.cli:*)",
+      "Bash(python:*)",
+      "Bash(venvScripts:*)",
+      "Bash(pip install:*)",
+      "Bash(\"venv\\Scripts\\python.exe\" -m pip install -e .)",
+      "Bash(\"venv\\Scripts\\hwinfo-tui.exe\"*)",
+      "Bash(timeout:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(\"venv\\Scripts\\python.exe\"*)",
+      "Bash(\"venv\\Scripts\\hwinfo-tui.exe\" monitor \"ai-docs\\sensors.CSV\" \"Core Temperatures (avg)\" \"Total CPU Usage\" --time-window 60 --refresh-rate 2)",
+      "Bash(\"venv\\Scripts\\hwinfo-tui.exe\" list-sensors \"ai-docs\\sensors.CSV\" --unit \"W\" --limit 3)",
+      "Bash(\"venv\\Scripts\\hwinfo-tui.exe\" monitor \"ai-docs\\sensors.CSV\" \"Core Temperatures (avg)\" \"CPU Package Power\" --time-window 60 --refresh-rate 2)",
+      "Bash(\"venv\\Scripts\\hwinfo-tui.exe\" monitor \"ai-docs\\sensors.CSV\" \"Core Temperatures (avg)\" \"CPU Package Power\" --time-window 60 --refresh-rate 2)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
