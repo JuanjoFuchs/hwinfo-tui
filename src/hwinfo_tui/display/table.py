@@ -117,15 +117,9 @@ class StatsTable:
         # Get the RGB color for this sensor from the chart
         rgb_color = sensor_colors.get(sensor_name, (255, 255, 255))  # Default to white
         
-        # Debug logging
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.info(f"Sensor '{sensor_name}' -> RGB color {rgb_color}")
-        
         # Create colored text using RGB
-        from rich.color import Color
-        color = Color.from_rgb(rgb_color[0], rgb_color[1], rgb_color[2])
-        return Text(display_name, style=f"bold {color}")
+        color_style = f"rgb({rgb_color[0]},{rgb_color[1]},{rgb_color[2]})"
+        return Text(display_name, style=f"bold {color_style}")
     
     def _get_colored_value(self, sensor_stats: SensorStats, value: Optional[float]) -> Text:
         """Get color-coded text for a value."""
@@ -211,7 +205,7 @@ class CompactTable:
         self.console = console
         self.stats_calculator = StatsCalculator()
     
-    def create_table(self, stats: Dict[str, SensorStats]) -> Table:
+    def create_table(self, stats: Dict[str, SensorStats], sensor_colors: Dict[str, tuple] = None) -> Table:
         """Create a compact table for smaller displays."""
         table = Table(
             show_header=True,
@@ -228,7 +222,10 @@ class CompactTable:
         
         # Add rows
         for sensor_stats in stats.values():
-            display_name = self._get_short_name(sensor_stats.sensor_name)
+            if sensor_colors:
+                display_name = self._get_colored_short_name(sensor_stats.sensor_name, sensor_colors)
+            else:
+                display_name = Text(self._get_short_name(sensor_stats.sensor_name))
             value_text = self._get_colored_value(sensor_stats, sensor_stats.last)
             unit_text = Text(sensor_stats.display_unit, style="dim")
             
@@ -246,6 +243,13 @@ class CompactTable:
             name = name[:12] + "..."
         
         return name
+    
+    def _get_colored_short_name(self, sensor_name: str, sensor_colors: Dict[str, tuple]) -> Text:
+        """Get a colored short name for the sensor."""
+        short_name = self._get_short_name(sensor_name)
+        rgb_color = sensor_colors.get(sensor_name, (255, 255, 255))
+        color_style = f"rgb({rgb_color[0]},{rgb_color[1]},{rgb_color[2]})"
+        return Text(short_name, style=f"bold {color_style}")
     
     def _get_colored_value(self, sensor_stats: SensorStats, value: Optional[float]) -> Text:
         """Get color-coded text for a value."""

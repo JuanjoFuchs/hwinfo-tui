@@ -38,14 +38,16 @@ class HWInfoLayout:
         self.compact_mode = False
         self.current_theme = "default"
         
-        # Color management
+        # Color management - improved colors for better terminal visibility
         self.rgb_colors = [
-            (255, 85, 85),   # Light red
-            (85, 255, 85),   # Light green  
-            (85, 85, 255),   # Light blue
-            (255, 255, 85),  # Light yellow
-            (255, 85, 255),  # Light magenta
-            (85, 255, 255),  # Light cyan
+            (255, 100, 100),   # Bright red
+            (100, 255, 100),   # Bright green  
+            (100, 150, 255),   # Bright blue
+            (255, 255, 100),   # Bright yellow
+            (255, 100, 255),   # Bright magenta
+            (100, 255, 255),   # Bright cyan
+            (255, 180, 100),   # Orange
+            (180, 100, 255),   # Purple
         ]
         self.sensor_colors = {}  # Current sensor to RGB color mapping
     
@@ -74,6 +76,15 @@ class HWInfoLayout:
         for i, sensor_name in enumerate(sensor_names):
             rgb_color = self.rgb_colors[i % len(self.rgb_colors)]
             self.sensor_colors[sensor_name] = rgb_color
+            
+            # Also assign the color to the sensor info for easy access
+            if isinstance(sensors[sensor_name], Sensor):
+                sensors[sensor_name].info.color = f"rgb({rgb_color[0]},{rgb_color[1]},{rgb_color[2]})"
+        
+        # Log color assignments for debugging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"Color assignments: {self.sensor_colors}")
     
     def update_layout(
         self,
@@ -174,7 +185,7 @@ class HWInfoLayout:
         
         if height < 15:
             # Very small terminal - table only
-            table = self.compact_table.create_table(stats)
+            table = self.compact_table.create_table(stats, self.sensor_colors)
             self.body_layout.update(table)
         else:
             # Small terminal - compact table + mini chart
@@ -186,7 +197,7 @@ class HWInfoLayout:
             self.body_layout.split_column(table_layout, chart_layout)
             
             # Compact table
-            table = self.compact_table.create_table(stats)
+            table = self.compact_table.create_table(stats, self.sensor_colors)
             table_layout.update(table)
             
             # Mini chart (no panel border)

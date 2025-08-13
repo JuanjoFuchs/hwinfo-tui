@@ -90,10 +90,10 @@ class PlotextMixin(JupyterMixin):
                     timestamps, values = self._get_sensor_data_in_range(sensor, start_time, latest_time)
                     if timestamps and values:
                         time_values = [(ts - start_time).total_seconds() for ts in timestamps]
-                        color = self.sensor_colors[sensor_name]  # Use RGB color
+                        color = self._rgb_to_plotext_color(self.sensor_colors.get(sensor_name, (255, 255, 255)))
                         display_name = self._get_display_name(sensor_name)
                         try:
-                            plt.plot(time_values, values, color=color, marker="braille", xside="lower", yside="left")
+                            plt.plot(time_values, values, color=color, marker="braille", xside="lower", yside="left", label=display_name)
                         except Exception as e:
                             logger.warning(f"Failed to plot {sensor_name}: {e}")
             
@@ -104,10 +104,10 @@ class PlotextMixin(JupyterMixin):
                     timestamps, values = self._get_sensor_data_in_range(sensor, start_time, latest_time)
                     if timestamps and values:
                         time_values = [(ts - start_time).total_seconds() for ts in timestamps]
-                        color = self.sensor_colors[sensor_name]  # Use RGB color
+                        color = self._rgb_to_plotext_color(self.sensor_colors.get(sensor_name, (255, 255, 255)))
                         display_name = self._get_display_name(sensor_name)
                         try:
-                            plt.plot(time_values, values, color=color, marker="braille", xside="lower", yside="right")
+                            plt.plot(time_values, values, color=color, marker="braille", xside="lower", yside="right", label=display_name)
                         except Exception as e:
                             logger.warning(f"Failed to plot {sensor_name}: {e}")
         else:
@@ -124,12 +124,12 @@ class PlotextMixin(JupyterMixin):
                 time_values = [(ts - start_time).total_seconds() for ts in timestamps]
                 
                 # Plot with error handling
-                color = self.sensor_colors[sensor_name]  # Use RGB color
+                color = self._rgb_to_plotext_color(self.sensor_colors.get(sensor_name, (255, 255, 255)))
                 display_name = self._get_display_name(sensor_name)
                 
                 try:
                     # Use line plot with braille markers
-                    plt.plot(time_values, values, color=color, marker="braille")
+                    plt.plot(time_values, values, color=color, marker="braille", label=display_name)
                 except Exception as e:
                     logger.warning(f"Failed to plot {sensor_name}: {e}")
                     continue
@@ -137,15 +137,36 @@ class PlotextMixin(JupyterMixin):
         # Configure chart
         self._configure_chart()
         
-        # Debug: Log RGB color mappings
-        logger.info(f"RGB color mappings: {self.sensor_colors}")
-        
         # Build and return
         try:
             return plt.build()
         except Exception as e:
             logger.error(f"Failed to build chart: {e}")
             return self._create_error_chart(str(e), chart_width, chart_height)
+    
+    def _rgb_to_plotext_color(self, rgb_tuple: tuple) -> str:
+        """Convert RGB tuple to plotext color format."""
+        r, g, b = rgb_tuple
+        # Plotext supports RGB colors as tuples or as color names
+        # For better compatibility, we'll map to the closest standard color
+        color_map = {
+            (255, 100, 100): "red",      # Bright red
+            (100, 255, 100): "green",    # Bright green  
+            (100, 150, 255): "blue",     # Bright blue
+            (255, 255, 100): "yellow",   # Bright yellow
+            (255, 100, 255): "magenta",  # Bright magenta
+            (100, 255, 255): "cyan",     # Bright cyan
+            (255, 180, 100): "orange",   # Orange
+            (180, 100, 255): "violet",   # Purple
+        }
+        
+        # Return the mapped color or use RGB tuple format for plotext
+        mapped_color = color_map.get(rgb_tuple)
+        if mapped_color:
+            return mapped_color
+        else:
+            # Try to use RGB tuple directly
+            return rgb_tuple
     
     def _get_latest_timestamp(self) -> Optional[datetime]:
         """Get the latest timestamp across all sensors."""
@@ -185,14 +206,18 @@ class PlotextMixin(JupyterMixin):
         # Set time range only
         plt.xlim(0, self.time_window_seconds)
         
-        # Grid for data reading
-        # plt.grid(True)
+        # Show legend for sensor identification with colors
+        try:
+            plt.show_legend()
+        except (AttributeError, TypeError):
+            # Legend not supported in this plotext version
+            pass
         
-        # Show legend for data identification
-        # try:
-        #     plt.show_legend()
-        # except (AttributeError, TypeError):
-        #     pass
+        # Grid for better data reading
+        try:
+            plt.grid(True, True)
+        except (AttributeError, TypeError):
+            pass
     
     def _create_empty_chart(self, width: int, height: int) -> str:
         """Create empty chart placeholder."""
