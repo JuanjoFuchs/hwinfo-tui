@@ -213,12 +213,6 @@ class PlotextMixin(JupyterMixin):
             # Legend not supported in this plotext version
             pass
         
-        # Grid for better data reading
-        try:
-            plt.grid(True, True)
-        except (AttributeError, TypeError):
-            pass
-    
     def _create_empty_chart(self, width: int, height: int) -> str:
         """Create empty chart placeholder."""
         plt.clear_data()
@@ -398,8 +392,6 @@ class SensorChart:
         else:
             plt.ylabel("Value")
         
-        # Simplified grid and theme
-        plt.grid(True)
         plt.theme("dark")
         
         # Try to show legend if available
