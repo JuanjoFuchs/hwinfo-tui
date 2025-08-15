@@ -8,7 +8,10 @@ import time
 from datetime import datetime
 from pathlib import Path
 from threading import Event, Thread
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
+
+if TYPE_CHECKING:
+    pass
 
 import pandas as pd
 from watchdog.events import FileSystemEventHandler
@@ -28,7 +31,7 @@ class CSVFileHandler(FileSystemEventHandler):
         self.callback = callback
         super().__init__()
 
-    def on_modified(self, event) -> None:
+    def on_modified(self, event: Any) -> None:
         """Handle file modification events."""
         if not event.is_directory and Path(event.src_path) == self.csv_path:
             self.callback()
@@ -43,7 +46,7 @@ class CSVReader:
         self.sensors: dict[str, Sensor] = {}
         self.headers: list[str] = []
         self.last_position = 0
-        self.observer: Observer | None = None
+        self.observer: Observer | None = None  # type: ignore
         self.monitoring = False
         self.stop_event = Event()
         self.encoding = 'utf-8-sig'  # Default encoding, will be set during header reading
@@ -267,7 +270,7 @@ class CSVReader:
         self.stop_event.set()
 
         if self.observer:
-            self.observer.stop()
+            self.observer.stop()  # type: ignore[unreachable]
             self.observer.join(timeout=5.0)
             self.observer = None
 

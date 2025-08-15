@@ -145,7 +145,7 @@ class TestSensor:
 
         # Should have readings from 0-5 seconds ago (6 readings total)
         assert len(recent_readings) == 6
-        
+
         # Verify the readings are the expected ones (i=0 through i=5)
         expected_values = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0]
         actual_values = [r.value for r in recent_readings]

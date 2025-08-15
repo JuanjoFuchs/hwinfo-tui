@@ -8,6 +8,7 @@ import sys
 import time
 from pathlib import Path
 from threading import Event
+from typing import Any
 
 from rich.console import Console
 from rich.live import Live
@@ -72,7 +73,7 @@ class HWInfoApp:
 
     def _setup_signal_handlers(self) -> None:
         """Setup signal handlers for graceful shutdown."""
-        def signal_handler(signum, frame):
+        def signal_handler(signum: int, frame: Any) -> None:
             logger.info(f"Received signal {signum}, shutting down...")
             self.stop()
 
@@ -141,7 +142,7 @@ class HWInfoApp:
         finally:
             self.cleanup()
 
-    def _create_initial_display(self) -> any:
+    def _create_initial_display(self) -> Any:
         """Create the initial display layout."""
         # Calculate initial stats
         stats = self.stats_calculator.calculate_all_stats(self.sensors)

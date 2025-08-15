@@ -110,7 +110,7 @@ def validate_sensors_with_csv(csv_path: Path, sensor_names: list[str]) -> list[s
     # Show information about filtering
     if excluded_messages:
         console.print(f"[yellow]Unit Filtering:[/yellow] Limited to {len(allowed_units)} unit(s)")
-        for unit in sorted(allowed_units):
+        for unit in sorted(unit for unit in allowed_units if unit is not None):
             if unit:
                 console.print(f"  ✓ Accepted unit: [green][{unit}][/green]")
 
@@ -278,7 +278,7 @@ def list_sensors(
             raise typer.Exit(1)
 
         # Filter by unit if requested
-        filtered_sensors = []
+        filtered_sensors: list[tuple[str, str | None]] = []
         unit_filter = UnitFilter()
 
         for sensor_name in available_sensors:

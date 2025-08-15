@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import os
+from typing import Any
 
 from rich.console import Console, Group
 from rich.layout import Layout
-from rich.panel import Panel
 from rich.text import Text
 
 from ..data.sensors import Sensor, SensorGroup
@@ -48,7 +48,7 @@ class HWInfoLayout:
             (255, 180, 100),   # Orange
             (180, 100, 255),   # Purple
         ]
-        self.sensor_colors = {}  # Current sensor to RGB color mapping
+        self.sensor_colors: dict[str, tuple[int, int, int]] = {}  # Current sensor to RGB color mapping
 
     def get_terminal_size(self) -> tuple[int, int]:
         """Get current terminal size."""
@@ -63,7 +63,7 @@ class HWInfoLayout:
         width, height = self.get_terminal_size()
         return width < 100 or height < 20
 
-    def _assign_sensor_colors(self, sensors: dict[str, any]) -> None:
+    def _assign_sensor_colors(self, sensors: dict[str, Sensor]) -> None:
         """Assign RGB colors to sensors deterministically based on sensor names."""
         # Get all sensor names and sort them for consistent ordering
         sensor_names = sorted(sensors.keys())
@@ -136,8 +136,9 @@ class HWInfoLayout:
         if self.compact_mode:
             status_items.append("[dim]Compact[/dim]")
 
-        header_text = " • ".join(status_items)
-        self.header_layout.update(Text(header_text, style="bold"))
+        " • ".join(status_items)
+        # Note: header_layout not implemented in header-less design
+        # self.header_layout.update(Text(header_text, style="bold"))
 
     def _update_full_body(
         self,
@@ -232,8 +233,9 @@ class HWInfoLayout:
         footer_content.append(Text(""))  # Spacer
         footer_content.append(controls_text)
 
-        footer_group = Group(*footer_content)
-        self.footer_layout.update(Panel(footer_group, style="dim"))
+        Group(*footer_content)
+        # Note: footer_layout not implemented in header-less design
+        # self.footer_layout.update(Panel(footer_group, style="dim"))
 
     def _create_sensor_groups(self, sensors: dict[str, Sensor]) -> list[SensorGroup]:
         """Create sensor groups from sensors dictionary."""
@@ -266,7 +268,7 @@ class HWInfoLayout:
         self.current_theme = theme
         # Theme changes would be applied to chart and table styling
 
-    def get_layout_info(self) -> dict[str, any]:
+    def get_layout_info(self) -> dict[str, Any]:
         """Get information about the current layout."""
         width, height = self.get_terminal_size()
         return {

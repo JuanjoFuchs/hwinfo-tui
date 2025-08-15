@@ -5,9 +5,12 @@ from __future__ import annotations
 import logging
 import sys
 from pathlib import Path
+from typing import Any, Callable, TypeVar, cast
 
 from rich.console import Console
 from rich.logging import RichHandler
+
+F = TypeVar('F', bound=Callable[..., Any])
 
 
 class HWInfoLogger:
@@ -171,16 +174,16 @@ class ErrorHandler:
         self.console.print("[dim]Using default settings...[/dim]")
 
 
-def create_safe_wrapper(func, error_handler: ErrorHandler, context: str = ""):
+def create_safe_wrapper(func: F, error_handler: ErrorHandler, context: str = "") -> F:
     """Create a safe wrapper function that handles exceptions."""
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
             return func(*args, **kwargs)
         except Exception as e:
             error_handler.handle_runtime_error(e, context, recoverable=True)
             return None
 
-    return wrapper
+    return cast(F, wrapper)
 
 
 def get_log_file_path() -> Path:

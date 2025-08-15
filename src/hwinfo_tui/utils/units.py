@@ -168,7 +168,7 @@ def validate_sensor_compatibility(sensor_names: list[str], max_units: int = 2) -
     return accepted, excluded_messages, allowed_units
 
 
-def get_unit_display_info(units: set[str | None]) -> dict[str, str]:
+def get_unit_display_info(units: set[str | None]) -> dict[str, dict[str, str]]:
     """Get display information for units."""
     unit_info = {}
 

@@ -14,8 +14,8 @@ try:
         import msvcrt
         _WINDOWS = True
     else:
-        import termios
-        import tty
+        import termios  # type: ignore
+        import tty  # type: ignore
         _WINDOWS = False
 except ImportError:
     _WINDOWS = sys.platform == "win32"
@@ -123,8 +123,8 @@ class KeyHandler:
         old_settings = None
         try:
             # Set terminal to raw mode
-            old_settings = termios.tcgetattr(sys.stdin)
-            tty.setraw(sys.stdin.fileno())
+            old_settings = termios.tcgetattr(sys.stdin)  # type: ignore
+            tty.setraw(sys.stdin.fileno())  # type: ignore
 
             while self.running:
                 try:
@@ -141,7 +141,7 @@ class KeyHandler:
             # Restore terminal settings
             if old_settings:
                 try:
-                    termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+                    termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)  # type: ignore
                 except Exception:
                     pass
 

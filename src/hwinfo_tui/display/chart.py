@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, Generator
 
-import plotext as plt
+import plotext as plt  # type: ignore
 from rich.ansi import AnsiDecoder
-from rich.console import Group
+from rich.console import Console, ConsoleOptions, Group, RenderableType
 from rich.jupyter import JupyterMixin
 
 from ..data.sensors import Sensor, SensorGroup
@@ -36,7 +36,7 @@ class PlotextMixin(JupyterMixin):
         # Use provided sensor colors from layout
         self.sensor_colors = sensor_colors or {}
 
-    def __rich_console__(self, console, options):
+    def __rich_console__(self, console: Console, options: ConsoleOptions) -> Generator[RenderableType, None, None]:
         """Render the plotext chart for Rich console."""
         try:
             # Get available dimensions
@@ -138,7 +138,7 @@ class PlotextMixin(JupyterMixin):
 
         # Build and return
         try:
-            return plt.build()
+            return plt.build()  # type: ignore  # type: ignore
         except Exception as e:
             logger.error(f"Failed to build chart: {e}")
             return self._create_error_chart(str(e), chart_width, chart_height)
@@ -244,7 +244,7 @@ class PlotextMixin(JupyterMixin):
         except Exception as e:
             logger.warning(f"Failed to configure y-axis ticks with units: {e}")
 
-    def _set_axis_ticks_with_units(self, sensor_group, axis_side: str) -> None:
+    def _set_axis_ticks_with_units(self, sensor_group: SensorGroup, axis_side: str) -> None:
         """Set y-axis ticks with units for a specific axis side."""
         try:
             unit = sensor_group.unit
@@ -279,7 +279,7 @@ class PlotextMixin(JupyterMixin):
         except Exception as e:
             logger.warning(f"Failed to set {axis_side} axis ticks: {e}")
 
-    def _get_sensor_group_range(self, sensor_group) -> tuple:
+    def _get_sensor_group_range(self, sensor_group: SensorGroup) -> tuple[float | None, float | None]:
         """Get the min/max value range for sensors in a group."""
         try:
             all_values = []
@@ -324,13 +324,13 @@ class PlotextMixin(JupyterMixin):
         """Create empty chart placeholder."""
         plt.clear_data()
         plt.plotsize(width, height)
-        return plt.build()
+        return plt.build()  # type: ignore
 
     def _create_error_chart(self, error: str, width: int, height: int) -> str:
         """Create error chart placeholder."""
         plt.clear_data()
         plt.plotsize(width, height)
-        return plt.build()
+        return plt.build()  # type: ignore
 
 
 class SensorChart:
@@ -560,7 +560,7 @@ class SensorChart:
         try:
             # Add placeholder text
             plt.text(chart_width // 2, chart_height // 2, "No sensor data to display", alignment="center")
-            return plt.build()
+            return plt.build()  # type: ignore
         except Exception:
             return "No data available"
 
@@ -589,7 +589,7 @@ class SensorChart:
         try:
             # Add error message
             plt.text(chart_width // 2, chart_height // 2, f"Error: {error_message[:30]}", alignment="center")
-            return plt.build()
+            return plt.build()  # type: ignore
         except Exception:
             return f"Chart error: {error_message}"
 

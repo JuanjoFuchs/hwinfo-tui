@@ -23,7 +23,7 @@ class StatsTable:
         stats: dict[str, SensorStats],
         sensor_groups: list[SensorGroup],
         time_window: int = 300,
-        sensor_colors: dict[str, tuple] = None
+        sensor_colors: dict[str, tuple] | None = None
     ) -> Table:
         """Create a Rich table displaying sensor statistics."""
         table = Table(
@@ -151,7 +151,7 @@ class StatsTable:
     def create_summary_line(self, stats: dict[str, SensorStats], units: set[str | None]) -> Text:
         """Create a summary line showing key information."""
         sensor_count = len(stats)
-        unit_list = [unit if unit else "no unit" for unit in sorted(units) if unit is not None]
+        unit_list = [unit if unit else "no unit" for unit in sorted(unit for unit in units if unit is not None)]
 
         if not unit_list:
             unit_str = "no units"
@@ -207,7 +207,7 @@ class CompactTable:
         self.console = console
         self.stats_calculator = StatsCalculator()
 
-    def create_table(self, stats: dict[str, SensorStats], sensor_colors: dict[str, tuple] = None) -> Table:
+    def create_table(self, stats: dict[str, SensorStats], sensor_colors: dict[str, tuple] | None = None) -> Table:
         """Create a compact table for smaller displays."""
         table = Table(
             show_header=True,
