@@ -2,7 +2,21 @@
 
 A gping-inspired terminal visualization tool for monitoring real-time hardware sensor data from HWInfo.
 
-![HWInfo TUI Demo](demo.png)
+![HWInfo TUI Demo](docs/demo.gif)
+
+```bash
+# top left pane
+hwinfo-tui monitor sensors.CSV "CPU Package Power" "Total System Power" "GPU Power" --time-window 120 --refresh-rate 1
+
+# bottom left pane
+hwinfo-tui monitor sensors.CSV "Physical Memory Load" "Total CPU Usage" "GPU D3D Usage" --time-window 120 --refresh-rate 1
+
+# top right pane
+hwinfo-tui monitor sensors.CSV "Core Temperatures" "CPU Package" "GPU Temperature" --time-window 120 --refresh-rate 1
+
+# bottom right pane
+hwinfo-tui monitor sensors.CSV "Core Thermal Throttling" "Core Critical Temperature" "Package/Ring Thermal Throttling" --time-window 120 --refresh-rate 1
+```
 
 ## Features
 
@@ -10,24 +24,19 @@ A gping-inspired terminal visualization tool for monitoring real-time hardware s
 - **gping-inspired UI**: Clean interface with statistics table and interactive chart
 - **Unit-based Filtering**: Automatically groups sensors by units, supports up to 2 units simultaneously
 - **Dual Y-axes**: Charts can display different units on left and right axes
-- **Interactive Controls**: Pause, reset, theme switching, and zoom controls
+- **Clean Interface**: Focused visualization without unnecessary interactive distractions
 - **Responsive Design**: Automatically adapts to terminal size with compact mode
 - **Fuzzy Sensor Matching**: Partial sensor name matching with suggestions
 - **Rich Statistics**: Min, max, average, and 95th percentile calculations
 
 ## Installation
 
-### From PyPI (Recommended)
-
-```bash
-pip install hwinfo-tui
-```
-
 ### From Source (Development)
 
 #### Quick Setup (Recommended)
 
 **Windows:**
+
 ```bash
 git clone https://github.com/hwinfo-tui/hwinfo-tui.git
 cd hwinfo-tui
@@ -40,6 +49,7 @@ setup.bat
 ```
 
 **Linux/macOS:**
+
 ```bash
 git clone https://github.com/hwinfo-tui/hwinfo-tui.git
 cd hwinfo-tui
@@ -71,39 +81,42 @@ pip install -e .
 
 ```bash
 # Basic usage - monitor CPU temperature
-hwinfo-tui sensors.csv "CPU Package"
+hwinfo-tui monitor sensors.csv "CPU Package"
 
 # Monitor multiple temperature sensors
-hwinfo-tui sensors.csv "Core Temperatures (avg)" "GPU Temperature" "CPU Package"
+hwinfo-tui monitor sensors.csv "Core Temperatures (avg)" "GPU Temperature" "CPU Package"
 
 # Mixed units - CPU usage and temperature
-hwinfo-tui sensors.csv "Total CPU Usage" "Core Temperatures"
+hwinfo-tui monitor sensors.csv "Total CPU Usage" "Core Temperatures"
 
 # Custom settings
-hwinfo-tui sensors.csv "GPU Temperature" --refresh-rate 0.5 --time-window 600
+hwinfo-tui monitor sensors.csv "GPU Temperature" --refresh-rate 0.5 --time-window 600
 ```
 
 ## Usage Examples
 
 ### Single Unit Monitoring
+
 ```bash
 # All temperature sensors
-hwinfo-tui sensors.csv "Core Temperatures (avg) [°C]" "GPU Temperature [°C]" "CPU Package [°C]"
+hwinfo-tui monitor sensors.csv "Core Temperatures (avg)" "GPU Temperature" "CPU Package"
 
 # All percentage sensors
-hwinfo-tui sensors.csv "Total CPU Usage [%]" "GPU Core Load [%]" "GPU Memory Usage [%]"
+hwinfo-tui monitor sensors.csv "Total CPU Usage" "GPU Core Load" "GPU Memory Usage"
 ```
 
 ### Dual Unit Monitoring
+
 ```bash
 # Temperature and percentage
-hwinfo-tui sensors.csv "Core Temperatures (avg) [°C]" "Total CPU Usage [%]" "GPU Temperature [°C]"
+hwinfo-tui monitor sensors.csv "Core Temperatures (avg)" "Total CPU Usage" "GPU Temperature"
 
 # Power and temperature
-hwinfo-tui sensors.csv "CPU Package Power [W]" "CPU Package [°C]" "GPU Power [W]"
+hwinfo-tui monitor sensors.csv "CPU Package Power" "CPU Package" "GPU Power"
 ```
 
 ### Discover Available Sensors
+
 ```bash
 # List all sensors in CSV
 hwinfo-tui list-sensors sensors.csv
@@ -115,65 +128,84 @@ hwinfo-tui list-sensors sensors.csv --unit "°C"
 hwinfo-tui list-sensors sensors.csv --limit 20
 ```
 
-## Interactive Controls
+## Command Line Reference
 
-| Key | Action |
-|-----|---------|
-| `Q` / `Ctrl+C` / `ESC` | Quit application |
-| `Space` | Pause/resume real-time updates |
-| `R` | Reset chart view and statistics |
-| `C` | Cycle through color themes |
-| `+` / `-` | Zoom in/out (change time window) |
-| `T` | Toggle time format (relative/absolute) |
-| `Ctrl+L` | Clear screen and reset |
-| `H` / `?` | Show help |
-
-## Command Line Options
+### Main Command
 
 ```bash
-hwinfo-tui [OPTIONS] CSV_FILE SENSOR_NAME [SENSOR_NAME...]
+ Usage: hwinfo-tui [OPTIONS] COMMAND [ARGS]...
 
-Options:
-  --refresh-rate FLOAT    Update frequency in seconds (0.1-60.0) [default: 1.0]
-  --time-window INTEGER   History window in seconds (10-7200) [default: 300]
-  --theme TEXT           Color theme (default/dark/matrix) [default: default]
-  --version              Show version and exit
-  --help                 Show help message
+ A gping-inspired terminal visualization tool for monitoring real-time
+ hardware sensor data from HWInfo
+
++- Options -------------------------------------------------------------------+
+| --version                     Show version information and exit             |
+| --install-completion          Install completion for the current shell.     |
+| --show-completion             Show completion for the current shell, to     |
+|                               copy it or customize the installation.        |
+| --help                        Show this message and exit.                   |
++-----------------------------------------------------------------------------+
++- Commands ------------------------------------------------------------------+
+| monitor        Monitor hardware sensors in real-time                        |
+| list-sensors   List all available sensors in the CSV file.                  |
++-----------------------------------------------------------------------------+
 ```
 
-## Configuration
+### Monitor Command
 
-HWInfo TUI supports configuration files for customizing behavior:
+```bash
+ Usage: hwinfo-tui monitor [OPTIONS] CSV_FILE SENSOR_NAMES...
 
-### Configuration Locations
-- `./config.toml` (current directory)
-- `./hwinfo-tui.toml`
-- `~/.config/hwinfo-tui/config.toml`
-- `~/.hwinfo-tui.toml`
+ Monitor hardware sensors in real-time
 
-### Sample Configuration
-```toml
-[display]
-refresh_rate = 1.0
-theme = "default"
-time_window = 300
-
-[sensors]
-cpu_temp_critical = 85
-cpu_temp_warning = 75
-gpu_temp_critical = 90
-gpu_temp_warning = 80
-
-[charts]
-smooth_updates = true
-auto_scale = true
-dual_axis_threshold = 2
-
-[ui]
-compact_mode_width = 100
-compact_mode_height = 20
-show_legend = true
++- Arguments -----------------------------------------------------------------+
+| *    csv_file          FILE             Path to HWInfo sensors.csv file     |
+|                                         [default: None]                     |
+|                                         [required]                          |
+| *    sensor_names      SENSOR_NAMES...  One or more sensor names to monitor |
+|                                         (supports partial matching)         |
+|                                         [default: None]                     |
+|                                         [required]                          |
++-----------------------------------------------------------------------------+
++- Options -------------------------------------------------------------------+
+| --refresh-rate  -r      FLOAT RANGE               Update frequency in       |
+|                         [0.1<=x<=60.0]            seconds (0.1-60.0)        |
+|                                                   [default: 1.0]            |
+| --time-window   -w      INTEGER RANGE             History window in seconds |
+|                         [10<=x<=7200]             (10-7200)                 |
+|                                                   [default: 300]            |
+| --theme         -t      TEXT                      Color theme               |
+|                                                   (default/dark/matrix)     |
+|                                                   [default: default]        |
+| --help                                            Show this message and     |
+|                                                   exit.                     |
++-----------------------------------------------------------------------------+
 ```
+
+### List Sensors Command
+
+```bash
+ Usage: hwinfo-tui list-sensors [OPTIONS] CSV_FILE
+
+ List all available sensors in the CSV file.
+
+ This command helps you discover sensor names for monitoring.
+
++- Arguments -----------------------------------------------------------------+
+| *    csv_file      FILE  Path to HWInfo sensors.csv file [default: None]    |
+|                          [required]                                         |
++-----------------------------------------------------------------------------+
++- Options -------------------------------------------------------------------+
+| --unit   -u      TEXT                        Filter sensors by unit (e.g.,  |
+|                                              '°C', '%', 'W')                |
+|                                              [default: None]                |
+| --limit  -l      INTEGER RANGE [1<=x<=1000]  Maximum number of sensors to   |
+|                                              display                        |
+|                                              [default: 50]                  |
+| --help                                       Show this message and exit.    |
++-----------------------------------------------------------------------------+
+```
+
 
 ## HWInfo Setup
 
@@ -193,9 +225,10 @@ HWInfo TUI automatically filters sensors based on their units to create clean, r
 - **Auto-exclusion**: Sensors with incompatible units are automatically excluded with clear warnings
 
 ### Example Unit Filtering
+
 ```bash
 # This command would exclude the [W] sensor and show a warning
-hwinfo-tui sensors.csv "Core Temperatures [°C]" "Total CPU Usage [%]" "CPU Power [W]"
+hwinfo-tui monitor sensors.csv "Core Temperatures" "Total CPU Usage" "CPU Power"
 # Output: "Excluded sensor 'CPU Power [W]' with unit [W] - chart limited to units [°C] and [%]"
 ```
 
@@ -218,29 +251,38 @@ hwinfo-tui sensors.csv "Core Temperatures [°C]" "Total CPU Usage [%]" "CPU Powe
 ### Common Issues
 
 **"No matching sensors found"**
+
 ```bash
 # Check available sensors first
 hwinfo-tui list-sensors sensors.csv
 # Use partial names for fuzzy matching
-hwinfo-tui sensors.csv "CPU" "GPU"
+hwinfo-tui monitor sensors.csv "CPU" "GPU"
 ```
 
 **"Too many units excluded"**
+
 - HWInfo TUI supports maximum 2 different units
 - Group sensors by similar units for best results
 
 **"File not found"**
+
 - Ensure HWInfo is actively logging to the CSV file
 - Check file path and permissions
 
 **Poor performance**
-- Reduce refresh rate: `--refresh-rate 2.0`
-- Reduce time window: `--time-window 120`
+
+```bash
+# Reduce refresh rate
+hwinfo-tui monitor sensors.csv "CPU" --refresh-rate 2.0
+# Reduce time window
+hwinfo-tui monitor sensors.csv "CPU" --time-window 120
+```
 
 ### Debug Mode
+
 ```bash
 # Enable verbose logging
-HWINFO_TUI_LOG_LEVEL=DEBUG hwinfo-tui sensors.csv "CPU"
+HWINFO_TUI_LOG_LEVEL=DEBUG hwinfo-tui monitor sensors.csv "CPU"
 ```
 
 ## Contributing
@@ -250,6 +292,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 ### Development Setup
 
 **Quick Setup:**
+
 ```bash
 git clone https://github.com/hwinfo-tui/hwinfo-tui.git
 cd hwinfo-tui
@@ -262,6 +305,7 @@ setup.bat
 ```
 
 **Manual Setup:**
+
 ```bash
 python -m venv venv
 # Activate venv (see above)
@@ -270,6 +314,7 @@ pytest
 ```
 
 **Daily Development:**
+
 ```bash
 # Windows Command Prompt
 activate.bat
@@ -286,6 +331,7 @@ pytest
 
 # Run the app
 hwinfo-tui --help
+hwinfo-tui monitor sensors.csv "CPU"
 ```
 
 ## License
