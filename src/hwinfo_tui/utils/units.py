@@ -218,15 +218,15 @@ def suggest_sensor_names(available_sensors: list[str], query: str, limit: int = 
     # Starts with matches
     for sensor in available_sensors:
         if sensor.lower().startswith(query_lower) and sensor not in suggestions:
-            suggestions.append(sensor)
             if len(suggestions) >= limit:
                 break
+            suggestions.append(sensor)
 
     # Contains matches
     for sensor in available_sensors:
         if query_lower in sensor.lower() and sensor not in suggestions:
-            suggestions.append(sensor)
             if len(suggestions) >= limit:
                 break
+            suggestions.append(sensor)
 
     return suggestions

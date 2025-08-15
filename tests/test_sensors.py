@@ -119,12 +119,13 @@ class TestSensor:
         info = SensorInfo("Thermal Throttling [Yes/No]")
         sensor = Sensor(info)
 
-        timestamp = datetime.now()
+        now = datetime.now()
 
-        sensor.add_reading(timestamp, "Yes")
+        sensor.add_reading(now, "Yes")
         assert sensor.latest_value == 1.0
 
-        sensor.add_reading(timestamp, "No")
+        # Add second reading 1 second later to ensure it's chronologically later
+        sensor.add_reading(now + timedelta(seconds=1), "No")
         assert sensor.latest_value == 0.0
 
     def test_get_readings_in_window(self):
@@ -142,8 +143,13 @@ class TestSensor:
         # Get readings from last 5 seconds
         recent_readings = sensor.get_readings_in_window(5)
 
-        # Should have readings from last 5 seconds (plus the current one)
-        assert len(recent_readings) <= 6
+        # Should have readings from 0-5 seconds ago (6 readings total)
+        assert len(recent_readings) == 6
+        
+        # Verify the readings are the expected ones (i=0 through i=5)
+        expected_values = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0]
+        actual_values = [r.value for r in recent_readings]
+        assert sorted(actual_values) == sorted(expected_values)
 
     def test_values_property(self):
         """Test values property."""

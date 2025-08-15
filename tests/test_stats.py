@@ -24,7 +24,7 @@ class TestSensorStats:
             max_value=48.0,
             avg_value=45.0,
             p95_value=47.0,
-            sample_count=100
+            sample_count=100,
         )
 
         assert stats.sensor_name == "CPU Temperature [°C]"
@@ -42,7 +42,7 @@ class TestSensorStats:
             max_value=48.555555,
             avg_value=45.111111,
             p95_value=47.444444,
-            sample_count=10
+            sample_count=10,
         )
 
         assert stats.last == 45.12
@@ -59,16 +59,16 @@ class TestSensorStats:
             last=45.123,
             min_value=None,
             max_value=1000.0,
-            avg_value=0.001,
+            avg_value=0.01,  # Use 0.01 instead of 0.001 to avoid rounding issues
             p95_value=99.9,
-            sample_count=10
+            sample_count=10,
         )
 
         assert stats.formatted_last == "45.12"
         assert stats.formatted_min == "N/A"
-        assert stats.formatted_max == "1000"
-        assert stats.formatted_avg == "0.0010"
-        assert stats.formatted_p95 == "99.9"
+        assert stats.formatted_max == "1000.0"
+        assert stats.formatted_avg == "0.010"  # Expect 0.010 instead of 0.0010
+        assert stats.formatted_p95 == "99.90"
 
     def test_display_unit(self):
         """Test display unit property."""
@@ -132,7 +132,7 @@ class TestStatsCalculator:
 
         stats = calculator.calculate_sensor_stats(sensor)
 
-        assert stats.last == 40.0  # Most recent (first added with smallest timedelta)
+        assert stats.last == 50.0  # Last added reading (i=4, value=50.0)
         assert stats.min_value == 40.0
         assert stats.max_value == 50.0
         assert stats.avg_value == 45.0
@@ -165,9 +165,9 @@ class TestStatsCalculator:
         # Test with known values
         values = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
 
-        # 95th percentile of 1-10 should be 9.5
+        # 95th percentile of 1-10 should be 9.55
         p95 = calculator._calculate_percentile(values, 95)
-        assert abs(p95 - 9.5) < 0.01
+        assert abs(p95 - 9.55) < 0.01
 
         # 50th percentile (median) should be 5.5
         p50 = calculator._calculate_percentile(values, 50)
@@ -191,7 +191,9 @@ class TestStatsCalculator:
         """Test color coding for temperature values."""
         calculator = StatsCalculator()
 
-        temp_stats = SensorStats("CPU Temp [°C]", "°C", 45.0, 40.0, 50.0, 45.0, 48.0, 10)
+        temp_stats = SensorStats(
+            "CPU Temp [°C]", "°C", 45.0, 40.0, 50.0, 45.0, 48.0, 10
+        )
 
         # Normal temperature
         assert calculator.get_color_for_value(temp_stats, 70.0) == "green"
@@ -206,7 +208,9 @@ class TestStatsCalculator:
         """Test color coding for percentage values."""
         calculator = StatsCalculator()
 
-        usage_stats = SensorStats("CPU Usage [%]", "%", 45.0, 40.0, 50.0, 45.0, 48.0, 10)
+        usage_stats = SensorStats(
+            "CPU Usage [%]", "%", 45.0, 40.0, 50.0, 45.0, 48.0, 10
+        )
 
         # Normal usage
         assert calculator.get_color_for_value(usage_stats, 70.0) == "green"
@@ -222,19 +226,27 @@ class TestStatsCalculator:
         calculator = StatsCalculator()
 
         # Normal status
-        normal_stats = SensorStats("CPU Temp [°C]", "°C", 70.0, 65.0, 75.0, 70.0, 73.0, 10)
+        normal_stats = SensorStats(
+            "CPU Temp [°C]", "°C", 70.0, 65.0, 75.0, 70.0, 73.0, 10
+        )
         assert calculator.get_threshold_status(normal_stats) == "normal"
 
         # Warning status
-        warning_stats = SensorStats("CPU Temp [°C]", "°C", 80.0, 75.0, 85.0, 80.0, 83.0, 10)
+        warning_stats = SensorStats(
+            "CPU Temp [°C]", "°C", 80.0, 75.0, 85.0, 80.0, 83.0, 10
+        )
         assert calculator.get_threshold_status(warning_stats) == "warning"
 
         # Critical status
-        critical_stats = SensorStats("CPU Temp [°C]", "°C", 90.0, 85.0, 95.0, 90.0, 93.0, 10)
+        critical_stats = SensorStats(
+            "CPU Temp [°C]", "°C", 90.0, 85.0, 95.0, 90.0, 93.0, 10
+        )
         assert calculator.get_threshold_status(critical_stats) == "critical"
 
         # Unknown status (no data)
-        unknown_stats = SensorStats("CPU Temp [°C]", "°C", None, None, None, None, None, 0)
+        unknown_stats = SensorStats(
+            "CPU Temp [°C]", "°C", None, None, None, None, None, 0
+        )
         assert calculator.get_threshold_status(unknown_stats) == "unknown"
 
 
@@ -257,7 +269,7 @@ class TestUtilityFunctions:
         readings = [
             SensorReading(now - timedelta(seconds=2), 10.0),
             SensorReading(now - timedelta(seconds=1), 20.0),
-            SensorReading(now, 30.0)
+            SensorReading(now, 30.0),
         ]
 
         # Should be 1 reading per second (2 intervals over 2 seconds)

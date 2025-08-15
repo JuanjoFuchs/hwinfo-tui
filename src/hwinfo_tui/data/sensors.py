@@ -88,12 +88,17 @@ class Sensor:
     @property
     def latest_value(self) -> float | None:
         """Get the most recent sensor value."""
-        return self.readings[-1].value if self.readings else None
+        if not self.readings:
+            return None
+        latest_reading = max(self.readings, key=lambda r: r.timestamp)
+        return latest_reading.value
 
     @property
     def latest_timestamp(self) -> datetime | None:
         """Get the most recent timestamp."""
-        return self.readings[-1].timestamp if self.readings else None
+        if not self.readings:
+            return None
+        return max(reading.timestamp for reading in self.readings)
 
     @property
     def values(self) -> list[float]:
