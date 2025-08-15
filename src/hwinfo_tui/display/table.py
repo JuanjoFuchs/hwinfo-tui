@@ -40,12 +40,11 @@ class StatsTable:
         
         # Add columns
         table.add_column("Sensor", style="bold", no_wrap=True, min_width=20)
-        table.add_column("Last", justify="right", min_width=8)
-        table.add_column("Min", justify="right", min_width=8)
-        table.add_column("Max", justify="right", min_width=8)
-        table.add_column("Avg", justify="right", min_width=8)
-        table.add_column("P95", justify="right", min_width=8)
-        table.add_column("Unit", justify="center", min_width=6)
+        table.add_column("Last", justify="right", min_width=10)
+        table.add_column("Min", justify="right", min_width=10)
+        table.add_column("Max", justify="right", min_width=10)
+        table.add_column("Avg", justify="right", min_width=10)
+        table.add_column("P95", justify="right", min_width=10)
         
         # Add sensor rows directly (no grouping)
         for sensor_stats in stats.values():
@@ -77,25 +76,21 @@ class StatsTable:
         # Get display name (remove unit suffix) with color coding
         display_name = self._get_colored_display_name(sensor_stats.sensor_name, sensor_colors)
         
-        # Get color-coded values
-        last_text = self._get_colored_value(sensor_stats, sensor_stats.last)
-        min_text = self._get_colored_value(sensor_stats, sensor_stats.min_value)
-        max_text = self._get_colored_value(sensor_stats, sensor_stats.max_value)
-        avg_text = self._get_colored_value(sensor_stats, sensor_stats.avg_value)
-        p95_text = self._get_colored_value(sensor_stats, sensor_stats.p95_value)
+        # Get color-coded values using sensor colors
+        last_text = self._get_colored_value(sensor_stats, sensor_stats.last, sensor_colors)
+        min_text = self._get_colored_value(sensor_stats, sensor_stats.min_value, sensor_colors)
+        max_text = self._get_colored_value(sensor_stats, sensor_stats.max_value, sensor_colors)
+        avg_text = self._get_colored_value(sensor_stats, sensor_stats.avg_value, sensor_colors)
+        p95_text = self._get_colored_value(sensor_stats, sensor_stats.p95_value, sensor_colors)
         
-        # Unit display
-        unit_text = Text(sensor_stats.display_unit, style="dim")
-        
-        # Add row to table
+        # Add row to table (units are now included in the values)
         table.add_row(
             display_name,
             last_text,
             min_text,
             max_text,
             avg_text,
-            p95_text,
-            unit_text
+            p95_text
         )
     
     def _get_display_name(self, sensor_name: str) -> str:
@@ -121,15 +116,24 @@ class StatsTable:
         color_style = f"rgb({rgb_color[0]},{rgb_color[1]},{rgb_color[2]})"
         return Text(display_name, style=f"bold {color_style}")
     
-    def _get_colored_value(self, sensor_stats: SensorStats, value: Optional[float]) -> Text:
-        """Get color-coded text for a value."""
+    def _get_colored_value(self, sensor_stats: SensorStats, value: Optional[float], sensor_colors: Dict[str, tuple]) -> Text:
+        """Get color-coded text for a value using sensor colors and including units."""
         if value is None:
             return Text("N/A", style="dim")
         
         formatted_value = sensor_stats._format_value(value)
-        color = self.stats_calculator.get_color_for_value(sensor_stats, value)
         
-        return Text(formatted_value, style=color)
+        # Include unit in the formatted value
+        if sensor_stats.display_unit:
+            formatted_value_with_unit = f"{formatted_value}{sensor_stats.display_unit}"
+        else:
+            formatted_value_with_unit = formatted_value
+        
+        # Use sensor color instead of threshold-based color
+        rgb_color = sensor_colors.get(sensor_stats.sensor_name, (255, 255, 255))
+        color_style = f"rgb({rgb_color[0]},{rgb_color[1]},{rgb_color[2]})"
+        
+        return Text(formatted_value_with_unit, style=color_style)
     
     def _format_time_window(self, seconds: int) -> str:
         """Format time window for display."""
@@ -217,8 +221,7 @@ class CompactTable:
         
         # Add columns
         table.add_column("Sensor", style="bold", no_wrap=True, min_width=15)
-        table.add_column("Value", justify="right", min_width=8)
-        table.add_column("Unit", justify="center", min_width=4)
+        table.add_column("Value", justify="right", min_width=12)
         
         # Add rows
         for sensor_stats in stats.values():
@@ -226,10 +229,9 @@ class CompactTable:
                 display_name = self._get_colored_short_name(sensor_stats.sensor_name, sensor_colors)
             else:
                 display_name = Text(self._get_short_name(sensor_stats.sensor_name))
-            value_text = self._get_colored_value(sensor_stats, sensor_stats.last)
-            unit_text = Text(sensor_stats.display_unit, style="dim")
+            value_text = self._get_colored_value(sensor_stats, sensor_stats.last, sensor_colors or {})
             
-            table.add_row(display_name, value_text, unit_text)
+            table.add_row(display_name, value_text)
         
         return table
     
@@ -251,12 +253,21 @@ class CompactTable:
         color_style = f"rgb({rgb_color[0]},{rgb_color[1]},{rgb_color[2]})"
         return Text(short_name, style=f"bold {color_style}")
     
-    def _get_colored_value(self, sensor_stats: SensorStats, value: Optional[float]) -> Text:
-        """Get color-coded text for a value."""
+    def _get_colored_value(self, sensor_stats: SensorStats, value: Optional[float], sensor_colors: Dict[str, tuple]) -> Text:
+        """Get color-coded text for a value using sensor colors and including units."""
         if value is None:
             return Text("N/A", style="dim")
         
         formatted_value = sensor_stats._format_value(value)
-        color = self.stats_calculator.get_color_for_value(sensor_stats, value)
         
-        return Text(formatted_value, style=color)
+        # Include unit in the formatted value
+        if sensor_stats.display_unit:
+            formatted_value_with_unit = f"{formatted_value}{sensor_stats.display_unit}"
+        else:
+            formatted_value_with_unit = formatted_value
+        
+        # Use sensor color instead of threshold-based color
+        rgb_color = sensor_colors.get(sensor_stats.sensor_name, (255, 255, 255))
+        color_style = f"rgb({rgb_color[0]},{rgb_color[1]},{rgb_color[2]})"
+        
+        return Text(formatted_value_with_unit, style=color_style)

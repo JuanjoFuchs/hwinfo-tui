@@ -128,7 +128,7 @@ class StatsCalculator:
         values = [r.value for r in readings]
         
         # Calculate basic statistics
-        last = sensor.latest_value
+        last = readings[-1].value if readings else None
         min_value = min(values)
         max_value = max(values)
         avg_value = statistics.mean(values)

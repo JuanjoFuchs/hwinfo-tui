@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import plotext as plt
 from rich.ansi import AnsiDecoder
@@ -26,7 +26,7 @@ class PlotextMixin(JupyterMixin):
         sensor_groups: List[SensorGroup],
         time_window_seconds: int = 300,
         title: str = "Hardware Sensor Monitoring",
-        sensor_colors: Dict[str, tuple] = None
+    sensor_colors: Optional[Dict[str, tuple]] = None
     ) -> None:
         """Initialize the plotext mixin."""
         self.sensors = sensors
@@ -91,9 +91,8 @@ class PlotextMixin(JupyterMixin):
                     if timestamps and values:
                         time_values = [(ts - start_time).total_seconds() for ts in timestamps]
                         color = self._rgb_to_plotext_color(self.sensor_colors.get(sensor_name, (255, 255, 255)))
-                        display_name = self._get_display_name(sensor_name)
                         try:
-                            plt.plot(time_values, values, color=color, marker="braille", xside="lower", yside="left", label=display_name)
+                            plt.plot(time_values, values, color=color, marker="braille", xside="lower", yside="left")
                         except Exception as e:
                             logger.warning(f"Failed to plot {sensor_name}: {e}")
             
@@ -105,9 +104,8 @@ class PlotextMixin(JupyterMixin):
                     if timestamps and values:
                         time_values = [(ts - start_time).total_seconds() for ts in timestamps]
                         color = self._rgb_to_plotext_color(self.sensor_colors.get(sensor_name, (255, 255, 255)))
-                        display_name = self._get_display_name(sensor_name)
                         try:
-                            plt.plot(time_values, values, color=color, marker="braille", xside="lower", yside="right", label=display_name)
+                            plt.plot(time_values, values, color=color, marker="braille", xside="lower", yside="right")
                         except Exception as e:
                             logger.warning(f"Failed to plot {sensor_name}: {e}")
         else:
@@ -125,17 +123,19 @@ class PlotextMixin(JupyterMixin):
                 
                 # Plot with error handling
                 color = self._rgb_to_plotext_color(self.sensor_colors.get(sensor_name, (255, 255, 255)))
-                display_name = self._get_display_name(sensor_name)
                 
                 try:
                     # Use line plot with braille markers
-                    plt.plot(time_values, values, color=color, marker="braille", label=display_name)
+                    plt.plot(time_values, values, color=color, marker="braille")
                 except Exception as e:
                     logger.warning(f"Failed to plot {sensor_name}: {e}")
                     continue
         
-        # Configure chart
-        self._configure_chart()
+        # Configure y-axis ticks with units
+        self._configure_y_ticks_with_units(dual_axis_mode)
+        
+        # Configure chart with HH:mm:ss tick labels
+        self._configure_chart_with_time_ticks(start_time, latest_time)
         
         # Build and return
         try:
@@ -144,7 +144,7 @@ class PlotextMixin(JupyterMixin):
             logger.error(f"Failed to build chart: {e}")
             return self._create_error_chart(str(e), chart_width, chart_height)
     
-    def _rgb_to_plotext_color(self, rgb_tuple: tuple) -> str:
+    def _rgb_to_plotext_color(self, rgb_tuple: tuple) -> Any:
         """Convert RGB tuple to plotext color format."""
         r, g, b = rgb_tuple
         # Plotext supports RGB colors as tuples or as color names
@@ -165,7 +165,7 @@ class PlotextMixin(JupyterMixin):
         if mapped_color:
             return mapped_color
         else:
-            # Try to use RGB tuple directly
+            # Try to use RGB tuple directly (plotext may accept this)
             return rgb_tuple
     
     def _get_latest_timestamp(self) -> Optional[datetime]:
@@ -201,17 +201,118 @@ class PlotextMixin(JupyterMixin):
             name = name[:17] + "..."
         return name
     
-    def _configure_chart(self) -> None:
-        """Configure chart appearance - minimal interface."""
-        # Set time range only
+    def _configure_chart_with_time_ticks(self, start_time: datetime, end_time: datetime) -> None:
+        """Configure chart appearance and set x-axis to actual timestamps (HH:mm:ss)."""
+        # Keep x domain in seconds since start of window
         plt.xlim(0, self.time_window_seconds)
         
-        # Show legend for sensor identification with colors
+        # Build evenly spaced tick positions over the window
         try:
-            plt.show_legend()
-        except (AttributeError, TypeError):
-            # Legend not supported in this plotext version
+            # Choose a reasonable number of ticks based on window length
+            # Aim for 3 ticks inclusive of both ends
+            num_ticks = 3
+            step = self.time_window_seconds / max(1, (num_ticks - 1))
+            positions = [round(i * step, 2) for i in range(num_ticks)]
+            # Ensure last tick aligns to window end
+            positions[-1] = float(self.time_window_seconds)
+            # Map positions to absolute timestamps
+            from datetime import timedelta as _td
+            labels = [(start_time + _td(seconds=pos)).strftime("%H:%M:%S") for pos in positions]
+            # Apply ticks with labels
+            try:
+                plt.xticks(positions, labels)
+            except Exception:
+                # If xticks API is unavailable, silently continue
+                pass
+        except Exception:
+            # Fallback: no custom ticks
             pass
+        
+    # No x-axis label or legend per request
+    
+    def _configure_y_ticks_with_units(self, dual_axis_mode: bool) -> None:
+        """Configure y-axis ticks with unit-formatted labels."""
+        try:
+            if dual_axis_mode and len(self.sensor_groups) >= 2:
+                # Dual-axis mode: set custom ticks for both left and right axes
+                self._set_axis_ticks_with_units(self.sensor_groups[0], "left")
+                self._set_axis_ticks_with_units(self.sensor_groups[1], "right")
+                
+            elif len(self.sensor_groups) >= 1:
+                # Single-axis mode: set ticks for primary axis
+                self._set_axis_ticks_with_units(self.sensor_groups[0], "left")
+                
+        except Exception as e:
+            logger.warning(f"Failed to configure y-axis ticks with units: {e}")
+    
+    def _set_axis_ticks_with_units(self, sensor_group, axis_side: str) -> None:
+        """Set y-axis ticks with units for a specific axis side."""
+        try:
+            # Get data range from sensors in this group
+            min_val, max_val = self._get_sensor_group_range(sensor_group)
+            
+            if min_val is None or max_val is None:
+                return
+            
+            # Generate appropriate tick positions
+            tick_positions = self._generate_tick_positions(min_val, max_val)
+            
+            # Format tick labels with units
+            unit = sensor_group.unit
+            if unit:
+                tick_labels = [f"{pos:.1f}{unit}" for pos in tick_positions]
+            else:
+                tick_labels = [f"{pos:.1f}" for pos in tick_positions]
+            
+            # Apply ticks to the specified axis
+            if axis_side == "right":
+                plt.yticks(tick_positions, tick_labels, yside="right")
+            else:
+                plt.yticks(tick_positions, tick_labels, yside="left")
+                
+        except Exception as e:
+            logger.warning(f"Failed to set {axis_side} axis ticks: {e}")
+    
+    def _get_sensor_group_range(self, sensor_group) -> tuple:
+        """Get the min/max value range for sensors in a group."""
+        try:
+            all_values = []
+            for sensor in sensor_group.sensors:
+                if sensor.readings:
+                    all_values.extend(sensor.values)
+            
+            if not all_values:
+                return None, None
+                
+            return min(all_values), max(all_values)
+            
+        except Exception:
+            return None, None
+    
+    def _generate_tick_positions(self, min_val: float, max_val: float, num_ticks: int = 6) -> list:
+        """Generate evenly distributed tick positions between min and max values."""
+        try:
+            if min_val == max_val:
+                return [min_val]
+            
+            # Add some padding to the range
+            range_size = max_val - min_val
+            padding = range_size * 0.1
+            
+            start = min_val - padding
+            end = max_val + padding
+            
+            # Generate evenly spaced positions
+            if num_ticks <= 1:
+                return [start]
+                
+            step = (end - start) / (num_ticks - 1)
+            positions = [start + i * step for i in range(num_ticks)]
+            
+            return positions
+            
+        except Exception:
+            return [min_val, max_val]
         
     def _create_empty_chart(self, width: int, height: int) -> str:
         """Create empty chart placeholder."""
@@ -232,6 +333,8 @@ class SensorChart:
     def __init__(self) -> None:
         """Initialize the sensor chart."""
         self.dual_axis_mode = False
+        # Basic fallback color palette for internal helpers
+        self.colors = ["red", "green", "blue", "yellow", "magenta", "cyan", "white"]
         
     def create_chart(
         self,
@@ -240,7 +343,7 @@ class SensorChart:
         time_window_seconds: int = 300,
         width: Optional[int] = None,
         height: Optional[int] = None,
-        sensor_colors: Dict[str, tuple] = None
+        sensor_colors: Optional[Dict[str, tuple]] = None,
     ) -> PlotextMixin:
         """Create a chart mixin for Rich display."""
         chart_mixin = PlotextMixin(
@@ -253,7 +356,7 @@ class SensorChart:
         self.current_chart = chart_mixin
         return chart_mixin
     
-    def get_sensor_colors(self) -> Dict[str, str]:
+    def get_sensor_colors(self) -> Dict[str, tuple]:
         """Get the current sensor to color mapping."""
         if hasattr(self, 'current_chart'):
             return self.current_chart.sensor_colors
@@ -325,11 +428,13 @@ class SensorChart:
         
         # Switch to right axis for second group
         if len(sensor_groups) > 1:
-            try:
-                plt.twinx()  # Try to use twinx if available
-            except AttributeError:
-                # Fallback: just plot on same axis with different colors
-                pass
+            # Try to use twinx if available
+            twinx = getattr(plt, "twinx", None)
+            if callable(twinx):
+                try:
+                    twinx()
+                except Exception:
+                    pass
             
             right_sensors = {name: sensors[name] for name in sensor_groups[1].sensor_names if name in sensors}
             for sensor_name, sensor in right_sensors.items():
@@ -363,8 +468,8 @@ class SensorChart:
         return timestamps, values
     
     def _configure_chart(self, sensor_groups: List[SensorGroup], time_window_seconds: int) -> None:
-        """Configure chart appearance and labels."""
-        # Set simplified title
+        """Configure chart appearance and labels (no x label, no legend)."""
+        # Title based on units present
         if sensor_groups:
             units = [group.unit for group in sensor_groups if group.unit]
             if len(units) == 1:
@@ -375,14 +480,13 @@ class SensorChart:
                 title = "Hardware Sensor Monitoring"
         else:
             title = "Hardware Sensor Monitoring"
-        
+
         plt.title(title)
-        
-        # Configure x-axis (time) - use relative time from now
-        plt.xlabel("Time (s ago)")
+
+        # X-axis: time window limits only (no label)
         plt.xlim(0, time_window_seconds)
-        
-        # Configure y-axis labels (simplified)
+
+        # Y-axis label based on first group's unit if available
         if sensor_groups and len(sensor_groups) >= 1:
             unit = sensor_groups[0].unit
             if unit:
@@ -391,15 +495,9 @@ class SensorChart:
                 plt.ylabel("Value")
         else:
             plt.ylabel("Value")
-        
+
         plt.theme("dark")
-        
-        # Try to show legend if available
-        try:
-            plt.show_legend()
-        except (AttributeError, TypeError):
-            # Fallback if legend methods don't work
-            pass
+        # No legend per request
     
     def _get_latest_timestamp(self, sensors: Dict[str, Sensor]) -> Optional[datetime]:
         """Get the latest timestamp across all sensors."""
@@ -435,7 +533,7 @@ class SensorChart:
         """Create an empty chart placeholder."""
         plt.clear_data()
         plt.clear_color()
-        
+
         # Apply same sizing logic as main chart
         if width and height:
             plt.limit_size(False, False)
@@ -443,17 +541,19 @@ class SensorChart:
             chart_height = max(height - 6, 10)
         else:
             plt.limit_size(True, True)
-            chart_width = max(plt.terminal_width() - 10, 50)
-            chart_height = max(plt.terminal_height() // 2, 15)
-        
+            term_w = getattr(plt, "terminal_width", lambda: 80)() or 80
+            term_h = getattr(plt, "terminal_height", lambda: 24)() or 24
+            chart_width = max(term_w - 10, 50)
+            chart_height = max(term_h // 2, 15)
+
         plt.plotsize(chart_width, chart_height)
         plt.title("No Data Available")
-        plt.xlabel("Time")
+        # No x-axis label per request
         plt.ylabel("Value")
-        
+
         try:
             # Add placeholder text
-            plt.text(chart_width//2, chart_height//2, "No sensor data to display", alignment="center")
+            plt.text(chart_width // 2, chart_height // 2, "No sensor data to display", alignment="center")
             return plt.build()
         except Exception:
             return "No data available"
@@ -462,7 +562,7 @@ class SensorChart:
         """Create an error chart placeholder."""
         plt.clear_data()
         plt.clear_color()
-        
+
         # Apply same sizing logic as main chart
         if width and height:
             plt.limit_size(False, False)
@@ -470,17 +570,19 @@ class SensorChart:
             chart_height = max(height - 6, 10)
         else:
             plt.limit_size(True, True)
-            chart_width = max(plt.terminal_width() - 10, 50)
-            chart_height = max(plt.terminal_height() // 2, 15)
-        
+            term_w = getattr(plt, "terminal_width", lambda: 80)() or 80
+            term_h = getattr(plt, "terminal_height", lambda: 24)() or 24
+            chart_width = max(term_w - 10, 50)
+            chart_height = max(term_h // 2, 15)
+
         plt.plotsize(chart_width, chart_height)
         plt.title("Chart Error")
-        plt.xlabel("Time")
+        # No x-axis label per request
         plt.ylabel("Value")
-        
+
         try:
             # Add error message
-            plt.text(chart_width//2, chart_height//2, f"Error: {error_message[:30]}", alignment="center")
+            plt.text(chart_width // 2, chart_height // 2, f"Error: {error_message[:30]}", alignment="center")
             return plt.build()
         except Exception:
             return f"Chart error: {error_message}"
