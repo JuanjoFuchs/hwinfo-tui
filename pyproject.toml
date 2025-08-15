@@ -107,9 +107,10 @@ strict_equality = true
 [[tool.mypy.overrides]]
 module = [
     "toml",
-    "tomli",
+    "tomli", 
     "pandas",
     "plotext",
+    "importlib_metadata",
 ]
 ignore_missing_imports = true
 

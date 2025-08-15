@@ -45,7 +45,7 @@ jobs:
           
       - name: Check package
         run: |
-          python -m twine check dist/*
+          python -m twine check dist/*.whl dist/*.tar.gz
           
       - name: Build Windows executable with PyInstaller
         run: |
