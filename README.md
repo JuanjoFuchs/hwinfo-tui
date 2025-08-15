@@ -1,8 +1,11 @@
-# HWInfo TUI
+# 🖥️ HWInfo TUI
+
+[![CI](https://github.com/JuanjoFuchs/hwinfo-tui/actions/workflows/ci.yml/badge.svg)](https://github.com/JuanjoFuchs/hwinfo-tui/actions/workflows/ci.yml) [![Release](https://github.com/JuanjoFuchs/hwinfo-tui/actions/workflows/release.yml/badge.svg)](https://github.com/JuanjoFuchs/hwinfo-tui/actions/workflows/release.yml) [![PyPI - Version](https://img.shields.io/pypi/v/hwinfo-tui)](https://pypi.org/project/hwinfo-tui/) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/hwinfo-tui) ![GitHub Release](https://img.shields.io/github/v/release/JuanjoFuchs/hwinfo-tui)
+ [![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 
 A [gping](https://github.com/orf/gping)-inspired terminal visualization tool for monitoring real-time hardware sensor data from HWInfo.
 
-![HWInfo TUI Demo](docs/demo.gif)
+![HWInfo TUI Demo](https://raw.githubusercontent.com/JuanjoFuchs/hwinfo-tui/refs/heads/main/docs/demo.gif)
 
 ```bash
 # top left pane
@@ -18,7 +21,7 @@ hwinfo-tui monitor sensors.CSV "Core Temperatures" "CPU Package" "GPU Temperatur
 hwinfo-tui monitor sensors.CSV "Core Thermal Throttling" "Core Critical Temperature" "Package/Ring Thermal Throttling" --time-window 120 --refresh-rate 1
 ```
 
-## Features
+## ✨ Features
 
 - **Real-time Monitoring**: Live sensor data visualization with configurable refresh rates
 - **gping-inspired UI**: Clean interface with statistics table and interactive chart
@@ -29,7 +32,19 @@ hwinfo-tui monitor sensors.CSV "Core Thermal Throttling" "Core Critical Temperat
 - **Fuzzy Sensor Matching**: Partial sensor name matching with suggestions
 - **Rich Statistics**: Min, max, average, and 95th percentile calculations
 
-## Installation
+## 📦 Installation
+
+### From PyPI (Recommended) [![PyPI - Version](https://img.shields.io/pypi/v/hwinfo-tui)](https://pypi.org/project/hwinfo-tui/)
+
+```bash
+pip install hwinfo-tui
+```
+
+### Portable Executable ![GitHub Release](https://img.shields.io/github/v/release/JuanjoFuchs/hwinfo-tui)
+
+Download the latest Windows executable from [GitHub Releases](https://github.com/JuanjoFuchs/hwinfo-tui/releases) - no installation required!
+
+
 
 ### From Source (Development)
 
@@ -74,7 +89,7 @@ source venv/bin/activate
 pip install -e .
 ```
 
-## Quick Start
+## 🚀 Quick Start
 
 1. **Generate HWInfo CSV**: Configure HWInfo to log sensor data to a CSV file
 2. **Run HWInfo TUI**: Monitor your desired sensors
@@ -93,7 +108,7 @@ hwinfo-tui monitor sensors.csv "Total CPU Usage" "Core Temperatures"
 hwinfo-tui monitor sensors.csv "GPU Temperature" --refresh-rate 0.5 --time-window 600
 ```
 
-## Usage Examples
+## 💡 Usage Examples
 
 ### Single Unit Monitoring
 
@@ -128,7 +143,7 @@ hwinfo-tui list-sensors sensors.csv --unit "°C"
 hwinfo-tui list-sensors sensors.csv --limit 20
 ```
 
-## Command Line Reference
+## 📋 Command Line Reference
 
 ### Main Command
 
@@ -207,7 +222,7 @@ hwinfo-tui list-sensors sensors.csv --limit 20
 ```
 
 
-## HWInfo Setup
+## ⚙️ HWInfo Setup
 
 1. Download and install [HWInfo64](https://www.hwinfo.com/)
 2. Run HWInfo64 and go to **Sensors**
@@ -216,7 +231,7 @@ hwinfo-tui list-sensors sensors.csv --limit 20
 5. Configure logging interval (1-2 seconds recommended)
 6. Use the generated CSV file with HWInfo TUI
 
-## Unit Filtering
+## 🔧 Unit Filtering
 
 HWInfo TUI automatically filters sensors based on their units to create clean, readable charts:
 
@@ -232,21 +247,21 @@ hwinfo-tui monitor sensors.csv "Core Temperatures" "Total CPU Usage" "CPU Power"
 # Output: "Excluded sensor 'CPU Power [W]' with unit [W] - chart limited to units [°C] and [%]"
 ```
 
-## System Requirements
+## 💻 System Requirements
 
 - **Python**: 3.8 or higher
 - **Terminal**: Any modern terminal with color support
 - **Platform**: Windows, macOS, Linux
 - **Dependencies**: typer, rich, plotext, pandas, watchdog
 
-## Performance
+## 🚀 Performance
 
 - **Memory Usage**: < 50MB baseline, < 100MB with full data retention
 - **CPU Overhead**: < 2% of single core during normal operation
 - **Startup Time**: < 2 seconds from launch to first display
 - **Update Frequency**: Configurable from 0.1 to 60 seconds
 
-## Troubleshooting
+## 🛠️ Troubleshooting
 
 ### Common Issues
 
@@ -285,7 +300,7 @@ hwinfo-tui monitor sensors.csv "CPU" --time-window 120
 HWINFO_TUI_LOG_LEVEL=DEBUG hwinfo-tui monitor sensors.csv "CPU"
 ```
 
-## Contributing
+## 🤝 Contributing
 
 We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
@@ -334,17 +349,17 @@ hwinfo-tui --help
 hwinfo-tui monitor sensors.csv "CPU"
 ```
 
-## License
+## 📄 License
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
 - Inspired by [gping](https://github.com/orf/gping) for the clean TUI design
 - Built with [Rich](https://github.com/Textualize/rich) for beautiful terminal output
 - Uses [plotext](https://github.com/piccolomo/plotext) for ASCII charts
 - Powered by [Typer](https://github.com/tiangolo/typer) for the CLI interface
 
-## Changelog
+## 📝 Changelog
 
 See [CHANGELOG.md](CHANGELOG.md) for version history and updates.
