@@ -6,16 +6,15 @@ build-backend = "setuptools.build_meta"
 name = "hwinfo-tui"
 version = "1.0.0"
 description = "A gping-inspired terminal visualization tool for monitoring real-time hardware sensor data from HWInfo"
-authors = [{name = "HWInfo TUI", email = "hwinfo-tui@example.com"}]
+authors = [{name = "JuanjoFuchs"}]
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 requires-python = ">=3.8"
 keywords = ["hardware", "monitoring", "tui", "sensors", "hwinfo", "visualization"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
     "Intended Audience :: System Administrators",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
@@ -43,12 +42,16 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.0.0",
     "pre-commit>=2.20.0",
+    "build>=1.0.0",
+    "twine>=4.0.0",
+    "pyinstaller>=6.0.0",
+    "importlib-metadata>=4.0.0; python_version < '3.8'",
 ]
 
 [project.urls]
-Homepage = "https://github.com/hwinfo-tui/hwinfo-tui"
-Issues = "https://github.com/hwinfo-tui/hwinfo-tui/issues"
-Repository = "https://github.com/hwinfo-tui/hwinfo-tui.git"
+Homepage = "https://github.com/JuanjoFuchs/hwinfo-tui"
+Issues = "https://github.com/JuanjoFuchs/hwinfo-tui/issues"
+Repository = "https://github.com/JuanjoFuchs/hwinfo-tui.git"
 
 [project.scripts]
 hwinfo-tui = "hwinfo_tui.main:app"
@@ -66,6 +69,8 @@ target-version = ["py38", "py39", "py310", "py311"]
 [tool.ruff]
 line-length = 88
 target-version = "py38"
+
+[tool.ruff.lint]
 select = [
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings

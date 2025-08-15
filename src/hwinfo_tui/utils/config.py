@@ -5,7 +5,6 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Optional
 
 try:
     import tomllib  # Python 3.11+
@@ -80,29 +79,29 @@ class HWInfoConfig:
     charts: ChartConfig = field(default_factory=ChartConfig)
     ui: UIConfig = field(default_factory=UIConfig)
     alerts: AlertConfig = field(default_factory=AlertConfig)
-    
+
     @classmethod
-    def load_from_file(cls, config_path: Optional[Path] = None) -> HWInfoConfig:
+    def load_from_file(cls, config_path: Path | None = None) -> HWInfoConfig:
         """Load configuration from a TOML file."""
         if config_path is None:
             config_path = cls.find_config_file()
-        
+
         if config_path and config_path.exists():
             try:
                 with open(config_path, 'rb') as f:
                     data = tomllib.load(f)
                 return cls.from_dict(data)
-            except Exception as e:
+            except Exception:
                 # If config loading fails, return default config
                 return cls()
-        
+
         return cls()
-    
+
     @classmethod
-    def from_dict(cls, data: Dict) -> HWInfoConfig:
+    def from_dict(cls, data: dict) -> HWInfoConfig:
         """Create configuration from dictionary."""
         config = cls()
-        
+
         # Load display settings
         if 'display' in data:
             display_data = data['display']
@@ -111,7 +110,7 @@ class HWInfoConfig:
                 theme=display_data.get('theme', 'default'),
                 time_window=display_data.get('time_window', 300)
             )
-        
+
         # Load sensor thresholds
         if 'sensors' in data:
             sensor_data = data['sensors']
@@ -129,7 +128,7 @@ class HWInfoConfig:
                 gpu_power_warning=sensor_data.get('gpu_power_warning', 250.0),
                 gpu_power_critical=sensor_data.get('gpu_power_critical', 400.0)
             )
-        
+
         # Load chart settings
         if 'charts' in data:
             chart_data = data['charts']
@@ -140,7 +139,7 @@ class HWInfoConfig:
                 max_data_points=chart_data.get('max_data_points', 3600),
                 dual_axis_threshold=chart_data.get('dual_axis_threshold', 2)
             )
-        
+
         # Load UI settings
         if 'ui' in data:
             ui_data = data['ui']
@@ -151,7 +150,7 @@ class HWInfoConfig:
                 show_grid=ui_data.get('show_grid', True),
                 animation_speed=ui_data.get('animation_speed', 'normal')
             )
-        
+
         # Load alert settings
         if 'alerts' in data:
             alert_data = data['alerts']
@@ -163,11 +162,11 @@ class HWInfoConfig:
                 warning_color=alert_data.get('warning_color', 'yellow'),
                 normal_color=alert_data.get('normal_color', 'green')
             )
-        
+
         return config
-    
+
     @staticmethod
-    def find_config_file() -> Optional[Path]:
+    def find_config_file() -> Path | None:
         """Find configuration file in standard locations."""
         # Search paths in order of preference
         search_paths = [
@@ -176,20 +175,20 @@ class HWInfoConfig:
             Path.home() / ".config" / "hwinfo-tui" / "config.toml",
             Path.home() / ".hwinfo-tui.toml",
         ]
-        
+
         # Add XDG config directory on Unix-like systems
         if os.name != 'nt':
             xdg_config = os.environ.get('XDG_CONFIG_HOME')
             if xdg_config:
                 search_paths.insert(-1, Path(xdg_config) / "hwinfo-tui" / "config.toml")
-        
+
         for path in search_paths:
             if path.exists() and path.is_file():
                 return path
-        
+
         return None
-    
-    def get_color_for_value(self, value: float, unit: Optional[str], sensor_name: str = "") -> str:
+
+    def get_color_for_value(self, value: float, unit: str | None, sensor_name: str = "") -> str:
         """Get color for a value based on configured thresholds."""
         if unit == "°C":
             # Temperature thresholds
@@ -209,7 +208,7 @@ class HWInfoConfig:
                     return self.alerts.critical_color
                 elif value >= 75:
                     return self.alerts.warning_color
-        
+
         elif unit == "%":
             # Usage/percentage thresholds
             if "cpu" in sensor_name.lower() and "usage" in sensor_name.lower():
@@ -228,7 +227,7 @@ class HWInfoConfig:
                     return self.alerts.critical_color
                 elif value >= 80:
                     return self.alerts.warning_color
-        
+
         elif unit == "W":
             # Power thresholds
             if "cpu" in sensor_name.lower():
@@ -241,16 +240,16 @@ class HWInfoConfig:
                     return self.alerts.critical_color
                 elif value >= self.sensors.gpu_power_warning:
                     return self.alerts.warning_color
-        
+
         return self.alerts.normal_color
-    
+
     def should_use_compact_mode(self, width: int, height: int) -> bool:
         """Determine if compact mode should be used based on terminal size."""
         return width < self.ui.compact_mode_width or height < self.ui.compact_mode_height
 
 
 # Global configuration instance
-_config_instance: Optional[HWInfoConfig] = None
+_config_instance: HWInfoConfig | None = None
 
 
 def get_config() -> HWInfoConfig:

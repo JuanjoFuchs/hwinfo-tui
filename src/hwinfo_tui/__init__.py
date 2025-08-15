@@ -1,5 +1,11 @@
 """HWInfo TUI - A gping-inspired hardware monitoring tool."""
 
-__version__ = "1.0.0"
-__author__ = "HWInfo TUI"
+try:
+    from importlib.metadata import version
+except ImportError:
+    # Python < 3.8 fallback
+    from importlib_metadata import version
+
+__version__ = version("hwinfo-tui")
+__author__ = "JuanjoFuchs"
 __description__ = "A gping-inspired terminal visualization tool for monitoring real-time hardware sensor data from HWInfo"

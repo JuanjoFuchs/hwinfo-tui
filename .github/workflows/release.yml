@@ -1,0 +1,103 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-release:
+    runs-on: windows-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          
+      - name: Verify tag matches version
+        shell: pwsh
+        run: |
+          $tag = $env:GITHUB_REF -replace 'refs/tags/',''
+          $pyproj = Get-Content pyproject.toml -Raw
+          if ($pyproj -match 'version\s*=\s*"([^"]+)"') { 
+            $ver = $Matches[1] 
+          } else { 
+            throw 'Version not found in pyproject.toml' 
+          }
+          if ($tag -ne "v$ver") { 
+            throw "Tag $tag does not match version v$ver" 
+          }
+          Write-Output "Tag $tag matches version v$ver"
+          
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine pyinstaller
+          pip install -e .
+          
+      - name: Build sdist and wheel
+        run: |
+          python -m build
+          
+      - name: Check package
+        run: |
+          python -m twine check dist/*
+          
+      - name: Build Windows executable with PyInstaller
+        run: |
+          pyinstaller --name hwinfo-tui --onefile --console --paths src src/hwinfo_tui/main.py
+          
+      - name: Rename executable with version
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -match 'refs/tags/v(.+)') { 
+            $ver = $Matches[1] 
+          } else { 
+            throw 'No version tag found' 
+          }
+          Rename-Item -Path dist/hwinfo-tui.exe -NewName "hwinfo-tui-$ver-windows-x64.exe"
+          Write-Output "Renamed to hwinfo-tui-$ver-windows-x64.exe"
+          
+      - name: Test executable
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -match 'refs/tags/v(.+)') { 
+            $ver = $Matches[1] 
+          } else { 
+            throw 'No version tag found' 
+          }
+          $exe = "dist/hwinfo-tui-$ver-windows-x64.exe"
+          Write-Output "Testing executable: $exe"
+          & $exe --help
+          & $exe --version
+          
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
+            dist/hwinfo-tui-*-windows-x64.exe
+          retention-days: 30
+          
+      - name: Publish to PyPI
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_TOKEN }}
+          
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
+            dist/hwinfo-tui-*-windows-x64.exe
+          generate_release_notes: true
+          draft: false
+          prerelease: false

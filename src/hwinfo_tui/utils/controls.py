@@ -6,7 +6,7 @@ import sys
 import threading
 import time
 from enum import Enum
-from typing import Callable, Optional
+from typing import Callable
 
 # Platform-specific imports
 try:
@@ -39,13 +39,13 @@ class KeyAction(Enum):
 
 class KeyHandler:
     """Handles keyboard input for interactive controls."""
-    
+
     def __init__(self) -> None:
         """Initialize the key handler."""
         self.callbacks: dict[KeyAction, Callable] = {}
         self.running = False
-        self.input_thread: Optional[threading.Thread] = None
-        
+        self.input_thread: threading.Thread | None = None
+
         # Key mapping
         self.key_map = {
             'q': KeyAction.QUIT,
@@ -68,41 +68,41 @@ class KeyHandler:
             '?': KeyAction.HELP,
             '\x0c': KeyAction.CLEAR_SCREEN,  # Ctrl+L
         }
-        
+
         # Arrow keys (platform specific)
         if not _WINDOWS:
             self.key_map.update({
                 '\x1b[D': KeyAction.PAN_LEFT,   # Left arrow
                 '\x1b[C': KeyAction.PAN_RIGHT,  # Right arrow
             })
-    
+
     def register_callback(self, action: KeyAction, callback: Callable) -> None:
         """Register a callback for a key action."""
         self.callbacks[action] = callback
-    
+
     def start_listening(self) -> None:
         """Start listening for keyboard input."""
         if self.running:
             return
-        
+
         self.running = True
         self.input_thread = threading.Thread(target=self._input_loop, daemon=True)
         self.input_thread.start()
-    
+
     def stop_listening(self) -> None:
         """Stop listening for keyboard input."""
         self.running = False
         if self.input_thread and self.input_thread.is_alive():
             # Give thread time to finish
             self.input_thread.join(timeout=0.5)
-    
+
     def _input_loop(self) -> None:
         """Main input loop running in separate thread."""
         if _WINDOWS:
             self._windows_input_loop()
         else:
             self._unix_input_loop()
-    
+
     def _windows_input_loop(self) -> None:
         """Input loop for Windows systems."""
         while self.running:
@@ -117,7 +117,7 @@ class KeyHandler:
             except Exception:
                 # Ignore input errors and continue
                 time.sleep(0.01)
-    
+
     def _unix_input_loop(self) -> None:
         """Input loop for Unix-like systems."""
         old_settings = None
@@ -125,7 +125,7 @@ class KeyHandler:
             # Set terminal to raw mode
             old_settings = termios.tcgetattr(sys.stdin)
             tty.setraw(sys.stdin.fileno())
-            
+
             while self.running:
                 try:
                     key = self._read_key()
@@ -144,15 +144,15 @@ class KeyHandler:
                     termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
                 except Exception:
                     pass
-    
-    def _read_key(self) -> Optional[str]:
+
+    def _read_key(self) -> str | None:
         """Read a key from stdin (Unix)."""
         try:
             # Use select to check if input is available
             import select
             if select.select([sys.stdin], [], [], 0.01)[0]:
                 key = sys.stdin.read(1)
-                
+
                 # Handle escape sequences (arrow keys, etc.)
                 if key == '\x1b':
                     # Try to read the rest of the escape sequence
@@ -160,28 +160,28 @@ class KeyHandler:
                         key += sys.stdin.read(1)
                         if key == '\x1b[' and select.select([sys.stdin], [], [], 0.01)[0]:
                             key += sys.stdin.read(1)
-                
+
                 return key
         except Exception:
             pass
-        
+
         return None
-    
+
     def _handle_key(self, key: str) -> None:
         """Handle a key press."""
         action = self.key_map.get(key, KeyAction.UNKNOWN)
-        
+
         if action in self.callbacks:
             try:
                 self.callbacks[action]()
-            except Exception as e:
+            except Exception:
                 # Log error but don't crash the input handler
                 pass
 
 
 class ControlManager:
     """Manages interactive controls for the HWInfo TUI."""
-    
+
     def __init__(self) -> None:
         """Initialize the control manager."""
         self.key_handler = KeyHandler()
@@ -191,19 +191,19 @@ class ControlManager:
         self.time_window_zoom = 300  # Current zoom level in seconds
         self.zoom_levels = [30, 60, 120, 300, 600, 1200, 3600]  # Available zoom levels
         self.current_zoom_index = 3  # Start at 300s
-        
+
         # Callbacks
-        self.on_quit: Optional[Callable] = None
-        self.on_pause_toggle: Optional[Callable] = None
-        self.on_reset: Optional[Callable] = None
-        self.on_theme_change: Optional[Callable[[str], None]] = None
-        self.on_zoom_change: Optional[Callable[[int], None]] = None
-        self.on_time_format_toggle: Optional[Callable] = None
-        self.on_clear_screen: Optional[Callable] = None
-        self.on_help_requested: Optional[Callable] = None
-        
+        self.on_quit: Callable | None = None
+        self.on_pause_toggle: Callable | None = None
+        self.on_reset: Callable | None = None
+        self.on_theme_change: Callable[[str], None] | None = None
+        self.on_zoom_change: Callable[[int], None] | None = None
+        self.on_time_format_toggle: Callable | None = None
+        self.on_clear_screen: Callable | None = None
+        self.on_help_requested: Callable | None = None
+
         self._setup_key_handlers()
-    
+
     def _setup_key_handlers(self) -> None:
         """Setup key event handlers."""
         self.key_handler.register_callback(KeyAction.QUIT, self._handle_quit)
@@ -215,38 +215,38 @@ class ControlManager:
         self.key_handler.register_callback(KeyAction.TOGGLE_TIME_FORMAT, self._handle_time_format_toggle)
         self.key_handler.register_callback(KeyAction.CLEAR_SCREEN, self._handle_clear_screen)
         self.key_handler.register_callback(KeyAction.HELP, self._handle_help)
-    
+
     def start(self) -> None:
         """Start the control manager."""
         self.key_handler.start_listening()
-    
+
     def stop(self) -> None:
         """Stop the control manager."""
         self.key_handler.stop_listening()
-    
+
     def _handle_quit(self) -> None:
         """Handle quit action."""
         if self.on_quit:
             self.on_quit()
-    
+
     def _handle_pause_toggle(self) -> None:
         """Handle pause toggle action."""
         self.paused = not self.paused
         if self.on_pause_toggle:
             self.on_pause_toggle()
-    
+
     def _handle_reset(self) -> None:
         """Handle reset action."""
         if self.on_reset:
             self.on_reset()
-    
+
     def _handle_theme_cycle(self) -> None:
         """Handle theme cycling action."""
         self.current_theme_index = (self.current_theme_index + 1) % len(self.themes)
         new_theme = self.themes[self.current_theme_index]
         if self.on_theme_change:
             self.on_theme_change(new_theme)
-    
+
     def _handle_zoom_in(self) -> None:
         """Handle zoom in action (shorter time window)."""
         if self.current_zoom_index > 0:
@@ -254,7 +254,7 @@ class ControlManager:
             self.time_window_zoom = self.zoom_levels[self.current_zoom_index]
             if self.on_zoom_change:
                 self.on_zoom_change(self.time_window_zoom)
-    
+
     def _handle_zoom_out(self) -> None:
         """Handle zoom out action (longer time window)."""
         if self.current_zoom_index < len(self.zoom_levels) - 1:
@@ -262,44 +262,44 @@ class ControlManager:
             self.time_window_zoom = self.zoom_levels[self.current_zoom_index]
             if self.on_zoom_change:
                 self.on_zoom_change(self.time_window_zoom)
-    
+
     def _handle_time_format_toggle(self) -> None:
         """Handle time format toggle action."""
         if self.on_time_format_toggle:
             self.on_time_format_toggle()
-    
+
     def _handle_clear_screen(self) -> None:
         """Handle clear screen action."""
         if self.on_clear_screen:
             self.on_clear_screen()
-    
+
     def _handle_help(self) -> None:
         """Handle help request action."""
         if self.on_help_requested:
             self.on_help_requested()
-    
+
     def get_current_theme(self) -> str:
         """Get the current theme name."""
         return self.themes[self.current_theme_index]
-    
+
     def get_current_zoom(self) -> int:
         """Get the current zoom level (time window in seconds)."""
         return self.time_window_zoom
-    
+
     def is_paused(self) -> bool:
         """Check if the display is paused."""
         return self.paused
-    
+
     def set_callbacks(
         self,
-        on_quit: Optional[Callable] = None,
-        on_pause_toggle: Optional[Callable] = None,
-        on_reset: Optional[Callable] = None,
-        on_theme_change: Optional[Callable[[str], None]] = None,
-        on_zoom_change: Optional[Callable[[int], None]] = None,
-        on_time_format_toggle: Optional[Callable] = None,
-        on_clear_screen: Optional[Callable] = None,
-        on_help_requested: Optional[Callable] = None
+        on_quit: Callable | None = None,
+        on_pause_toggle: Callable | None = None,
+        on_reset: Callable | None = None,
+        on_theme_change: Callable[[str], None] | None = None,
+        on_zoom_change: Callable[[int], None] | None = None,
+        on_time_format_toggle: Callable | None = None,
+        on_clear_screen: Callable | None = None,
+        on_help_requested: Callable | None = None
     ) -> None:
         """Set all callbacks at once."""
         if on_quit is not None:
