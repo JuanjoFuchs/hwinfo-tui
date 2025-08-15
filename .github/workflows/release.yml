@@ -6,8 +6,8 @@ on:
       - 'v*'
 
 jobs:
-  build-release:
-    runs-on: windows-latest
+  build-packages:
+    runs-on: ubuntu-latest
     
     steps:
       - uses: actions/checkout@v4
@@ -19,24 +19,19 @@ jobs:
           cache: 'pip'
           
       - name: Verify tag matches version
-        shell: pwsh
         run: |
-          $tag = $env:GITHUB_REF -replace 'refs/tags/',''
-          $pyproj = Get-Content pyproject.toml -Raw
-          if ($pyproj -match 'version\s*=\s*"([^"]+)"') { 
-            $ver = $Matches[1] 
-          } else { 
-            throw 'Version not found in pyproject.toml' 
-          }
-          if ($tag -ne "v$ver") { 
-            throw "Tag $tag does not match version v$ver" 
-          }
-          Write-Output "Tag $tag matches version v$ver"
+          TAG=${GITHUB_REF#refs/tags/}
+          VERSION=$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          if [ "$TAG" != "v$VERSION" ]; then
+            echo "Tag $TAG does not match version v$VERSION"
+            exit 1
+          fi
+          echo "Tag $TAG matches version v$VERSION"
           
       - name: Install build tools
         run: |
           python -m pip install --upgrade pip
-          pip install build twine pyinstaller
+          pip install build twine
           pip install -e .
           
       - name: Build sdist and wheel
@@ -46,6 +41,39 @@ jobs:
       - name: Check package
         run: |
           python -m twine check dist/*.whl dist/*.tar.gz
+          
+      - name: Upload Python packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-packages
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
+          retention-days: 30
+          
+      - name: Publish to PyPI
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_TOKEN }}
+
+  build-executable:
+    runs-on: windows-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+          pip install -e .
           
       - name: Build Windows executable with PyInstaller
         run: |
@@ -75,21 +103,29 @@ jobs:
           & $exe --help
           & $exe --version
           
-      - name: Upload build artifacts
+      - name: Upload Windows executable
         uses: actions/upload-artifact@v4
         with:
-          name: release-artifacts
-          path: |
-            dist/*.whl
-            dist/*.tar.gz
-            dist/hwinfo-tui-*-windows-x64.exe
+          name: windows-executable
+          path: dist/hwinfo-tui-*-windows-x64.exe
           retention-days: 30
-          
-      - name: Publish to PyPI
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: pypa/gh-action-pypi-publish@release/v1
+
+  create-release:
+    needs: [build-packages, build-executable]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Download Python packages
+        uses: actions/download-artifact@v4
         with:
-          password: ${{ secrets.PYPI_TOKEN }}
+          name: python-packages
+          path: dist/
+          
+      - name: Download Windows executable
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-executable
+          path: dist/
           
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
