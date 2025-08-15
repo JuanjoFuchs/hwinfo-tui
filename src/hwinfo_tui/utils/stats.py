@@ -73,6 +73,10 @@ class SensorStats:
     
     def _format_value(self, value: float) -> str:
         """Format a value based on its magnitude."""
+        # Handle Yes/No sensors
+        if self.unit == "Yes/No":
+            return "Yes" if value == 1.0 else "No"
+        
         # Handle special cases
         if value == 0.0:
             return "0"
@@ -98,6 +102,9 @@ class SensorStats:
     @property
     def display_unit(self) -> str:
         """Get display unit or empty string."""
+        # Don't display unit for Yes/No sensors since values already contain Yes/No
+        if self.unit == "Yes/No":
+            return ""
         return self.unit or ""
 
 

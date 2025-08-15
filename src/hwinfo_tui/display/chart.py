@@ -248,21 +248,28 @@ class PlotextMixin(JupyterMixin):
     def _set_axis_ticks_with_units(self, sensor_group, axis_side: str) -> None:
         """Set y-axis ticks with units for a specific axis side."""
         try:
-            # Get data range from sensors in this group
-            min_val, max_val = self._get_sensor_group_range(sensor_group)
-            
-            if min_val is None or max_val is None:
-                return
-            
-            # Generate appropriate tick positions
-            tick_positions = self._generate_tick_positions(min_val, max_val)
-            
-            # Format tick labels with units
             unit = sensor_group.unit
-            if unit:
-                tick_labels = [f"{pos:.1f}{unit}" for pos in tick_positions]
+            
+            # Special handling for Yes/No sensors
+            if unit == "Yes/No":
+                # Set exactly 2 ticks: No at 0, Yes at 1
+                tick_positions = [0.0, 1.0]
+                tick_labels = ["No", "Yes"]
             else:
-                tick_labels = [f"{pos:.1f}" for pos in tick_positions]
+                # Get data range from sensors in this group
+                min_val, max_val = self._get_sensor_group_range(sensor_group)
+                
+                if min_val is None or max_val is None:
+                    return
+                
+                # Generate appropriate tick positions
+                tick_positions = self._generate_tick_positions(min_val, max_val)
+                
+                # Format tick labels with units
+                if unit:
+                    tick_labels = [f"{pos:.1f}{unit}" for pos in tick_positions]
+                else:
+                    tick_labels = [f"{pos:.1f}" for pos in tick_positions]
             
             # Apply ticks to the specified axis
             if axis_side == "right":
