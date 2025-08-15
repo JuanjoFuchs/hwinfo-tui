@@ -1,6 +1,6 @@
 # HWInfo TUI
 
-A gping-inspired terminal visualization tool for monitoring real-time hardware sensor data from HWInfo.
+A [gping](https://github.com/orf/gping)-inspired terminal visualization tool for monitoring real-time hardware sensor data from HWInfo.
 
 ![HWInfo TUI Demo](docs/demo.gif)
 
