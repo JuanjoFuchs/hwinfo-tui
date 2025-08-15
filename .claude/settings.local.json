@@ -55,7 +55,10 @@
       "Bash(\"venv\\Scripts\\ruff.exe\" check .)",
       "Bash(\"venv\\Scripts\\ruff.exe\" check . --fix)",
       "Bash(\"venv\\Scripts\\ruff.exe\" check . --fix --unsafe-fixes)",
-      "Bash(.build.ps1 -Clean)"
+      "Bash(.build.ps1 -Clean)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(\"venv\\Scripts\\pip.exe\" install types-toml pandas-stubs)"
     ],
     "deny": [],
     "ask": [],

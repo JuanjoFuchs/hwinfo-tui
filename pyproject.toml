@@ -45,6 +45,8 @@ dev = [
     "build>=1.0.0",
     "twine>=4.0.0",
     "pyinstaller>=6.0.0",
+    "types-toml>=0.10.8",
+    "pandas-stubs>=2.0.0",
     "importlib-metadata>=4.0.0; python_version < '3.8'",
 ]
 
@@ -100,6 +102,15 @@ warn_unused_ignores = true
 warn_no_return = true
 warn_unreachable = true
 strict_equality = true
+
+# Ignore missing imports for these modules
+[[tool.mypy.overrides]]
+module = [
+    "toml",
+    "pandas",
+    "plotext",
+]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 minversion = "7.0"
