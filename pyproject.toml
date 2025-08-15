@@ -9,6 +9,7 @@ description = "A gping-inspired terminal visualization tool for monitoring real-
 authors = [{name = "JuanjoFuchs"}]
 readme = "README.md"
 license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.8"
 keywords = ["hardware", "monitoring", "tui", "sensors", "hwinfo", "visualization"]
 classifiers = [
