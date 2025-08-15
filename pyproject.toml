@@ -110,7 +110,6 @@ module = [
     "tomli", 
     "pandas",
     "plotext",
-    "importlib_metadata",
 ]
 ignore_missing_imports = true
 
