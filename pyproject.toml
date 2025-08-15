@@ -107,6 +107,7 @@ strict_equality = true
 [[tool.mypy.overrides]]
 module = [
     "toml",
+    "tomli",
     "pandas",
     "plotext",
 ]

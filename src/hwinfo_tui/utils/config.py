@@ -10,7 +10,7 @@ try:
     import tomllib  # type: ignore # Python 3.11+
 except ImportError:
     try:
-        import tomli as tomllib  # type: ignore # Fallback for older Python versions
+        import tomli as tomllib  # Fallback for older Python versions
     except ImportError:
         import toml as tomllib  # Final fallback
 

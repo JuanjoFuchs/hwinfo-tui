@@ -6,7 +6,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Any, Generator
 
-import plotext as plt  # type: ignore
+import plotext as plt
 from rich.ansi import AnsiDecoder
 from rich.console import Console, ConsoleOptions, Group, RenderableType
 from rich.jupyter import JupyterMixin
