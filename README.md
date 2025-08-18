@@ -1,6 +1,6 @@
 # 🖥️ HWInfo TUI
 
-[![CI](https://github.com/JuanjoFuchs/hwinfo-tui/actions/workflows/ci.yml/badge.svg)](https://github.com/JuanjoFuchs/hwinfo-tui/actions/workflows/ci.yml) [![Release](https://github.com/JuanjoFuchs/hwinfo-tui/actions/workflows/release.yml/badge.svg)](https://github.com/JuanjoFuchs/hwinfo-tui/actions/workflows/release.yml) [![PyPI - Version](https://img.shields.io/pypi/v/hwinfo-tui)](https://pypi.org/project/hwinfo-tui/) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/hwinfo-tui) ![GitHub Release](https://img.shields.io/github/v/release/JuanjoFuchs/hwinfo-tui)
+[![CI](https://github.com/JuanjoFuchs/hwinfo-tui/actions/workflows/ci.yml/badge.svg)](https://github.com/JuanjoFuchs/hwinfo-tui/actions/workflows/ci.yml) [![Release](https://github.com/JuanjoFuchs/hwinfo-tui/actions/workflows/release.yml/badge.svg)](https://github.com/JuanjoFuchs/hwinfo-tui/actions/workflows/release.yml) [![PyPI - Version](https://img.shields.io/pypi/v/hwinfo-tui)](https://pypi.org/project/hwinfo-tui/) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/hwinfo-tui) [![GitHub Release](https://img.shields.io/github/v/release/JuanjoFuchs/hwinfo-tui)](https://github.com/JuanjoFuchs/hwinfo-tui/releases)
  [![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 
 A [gping](https://github.com/orf/gping)-inspired terminal visualization tool for monitoring real-time hardware sensor data from HWInfo.
@@ -40,7 +40,7 @@ hwinfo-tui monitor sensors.CSV "Core Thermal Throttling" "Core Critical Temperat
 pip install hwinfo-tui
 ```
 
-### Portable Executable ![GitHub Release](https://img.shields.io/github/v/release/JuanjoFuchs/hwinfo-tui)
+### Portable Executable [![GitHub Release](https://img.shields.io/github/v/release/JuanjoFuchs/hwinfo-tui)](https://github.com/JuanjoFuchs/hwinfo-tui/releases)
 
 Download the latest Windows executable from [GitHub Releases](https://github.com/JuanjoFuchs/hwinfo-tui/releases) - no installation required!
 
