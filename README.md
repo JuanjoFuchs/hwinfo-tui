@@ -1,7 +1,7 @@
 # 🖥️ HWInfo TUI
 
-[![CI](https://github.com/JuanjoFuchs/hwinfo-tui/actions/workflows/ci.yml/badge.svg)](https://github.com/JuanjoFuchs/hwinfo-tui/actions/workflows/ci.yml) [![Release](https://github.com/JuanjoFuchs/hwinfo-tui/actions/workflows/release.yml/badge.svg)](https://github.com/JuanjoFuchs/hwinfo-tui/actions/workflows/release.yml) [![PyPI - Version](https://img.shields.io/pypi/v/hwinfo-tui)](https://pypi.org/project/hwinfo-tui/) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/hwinfo-tui) [![GitHub Release](https://img.shields.io/github/v/release/JuanjoFuchs/hwinfo-tui)](https://github.com/JuanjoFuchs/hwinfo-tui/releases)
- [![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
+[![CI](https://github.com/JuanjoFuchs/hwinfo-tui/actions/workflows/ci.yml/badge.svg)](https://github.com/JuanjoFuchs/hwinfo-tui/actions/workflows/ci.yml) [![Release](https://github.com/JuanjoFuchs/hwinfo-tui/actions/workflows/release.yml/badge.svg)](https://github.com/JuanjoFuchs/hwinfo-tui/actions/workflows/release.yml) [![PyPI - Version](https://img.shields.io/pypi/v/hwinfo-tui)](https://pypi.org/project/hwinfo-tui/) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/hwinfo-tui) [![GitHub Release](https://img.shields.io/github/v/release/JuanjoFuchs/hwinfo-tui)](https://github.com/JuanjoFuchs/hwinfo-tui/releases) 
+[![WinGet Package Version](https://img.shields.io/winget/v/JuanjoFuchs.hwinfo-tui)](https://winget.run/pkg/JuanjoFuchs/hwinfo-tui) [![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 
 A [gping](https://github.com/orf/gping)-inspired terminal visualization tool for monitoring real-time hardware sensor data from HWInfo.
 
@@ -33,6 +33,12 @@ hwinfo-tui monitor sensors.CSV "Core Thermal Throttling" "Core Critical Temperat
 - **Rich Statistics**: Min, max, average, and 95th percentile calculations
 
 ## 📦 Installation
+
+### From Winget (Recommended for Windows) [![WinGet Package Version](https://img.shields.io/winget/v/JuanjoFuchs.hwinfo-tui)](https://winget.run/pkg/JuanjoFuchs/hwinfo-tui)
+
+```bash
+winget install hwinfo-tui
+```
 
 ### From PyPI (Recommended) [![PyPI - Version](https://img.shields.io/pypi/v/hwinfo-tui)](https://pypi.org/project/hwinfo-tui/)
 
