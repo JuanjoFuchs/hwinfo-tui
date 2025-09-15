@@ -98,21 +98,27 @@ pip install -e .
 ## 🚀 Quick Start
 
 1. **Generate HWInfo CSV**: Configure HWInfo to log sensor data to a CSV file
+
+   a) Open HWiNFO
+   b) Go to **Sensors** window
+   c) Click **Start Logging**
+   d) Choose CSV format and select a file name and location (e.g., `sensors.csv`)
+
 2. **Run HWInfo TUI**: Monitor your desired sensors
 
-```bash
-# Basic usage - monitor CPU temperature
-hwinfo-tui monitor sensors.csv "CPU Package"
-
-# Monitor multiple temperature sensors
-hwinfo-tui monitor sensors.csv "Core Temperatures (avg)" "GPU Temperature" "CPU Package"
-
-# Mixed units - CPU usage and temperature
-hwinfo-tui monitor sensors.csv "Total CPU Usage" "Core Temperatures"
-
-# Custom settings
-hwinfo-tui monitor sensors.csv "GPU Temperature" --refresh-rate 0.5 --time-window 600
-```
+   ```bash
+   # Basic usage - monitor CPU temperature
+   hwinfo-tui monitor sensors.csv "CPU Package"
+   
+   # Monitor multiple temperature sensors
+   hwinfo-tui monitor sensors.csv "Core Temperatures (avg)" "GPU Temperature" "CPU Package"
+   
+   # Mixed units - CPU usage and temperature
+   hwinfo-tui monitor sensors.csv "Total CPU Usage" "Core Temperatures"
+   
+   # Custom settings
+   hwinfo-tui monitor sensors.csv "GPU Temperature" --refresh-rate 0.5 --time-window 600
+   ```
 
 ## 💡 Usage Examples
 
