@@ -45,15 +45,13 @@ class HWInfoApp:
         csv_path: Path,
         sensor_names: list[str],
         refresh_rate: float = 1.0,
-        time_window: int = 300,
-        theme: str = "default"
+        time_window: int = 300
     ) -> None:
         """Initialize the application."""
         self.csv_path = csv_path
         self.sensor_names = sensor_names
         self.refresh_rate = refresh_rate
         self.time_window = time_window
-        self.theme = theme
 
         # Application components
         self.console = Console()
@@ -182,9 +180,6 @@ class HWInfoApp:
                         self._update_display(live)
                         last_update = current_time
 
-                # Handle keyboard input (non-blocking)
-                self._handle_keyboard_input()
-
                 # Small sleep to prevent busy waiting
                 time.sleep(0.05)
 
@@ -220,13 +215,6 @@ class HWInfoApp:
 
         except Exception as e:
             logger.error(f"Failed to update display: {e}")
-
-    def _handle_keyboard_input(self) -> None:
-        """Handle keyboard input (simplified - real implementation would use keyboard library)."""
-        # This is a placeholder for keyboard input handling
-        # In a real implementation, you would use a library like `keyboard` or `pynput`
-        # to handle non-blocking keyboard input
-        pass
 
     def _handle_reset(self) -> None:
         """Handle reset request."""
@@ -279,16 +267,14 @@ def run_application(
     csv_path: Path,
     sensor_names: list[str],
     refresh_rate: float = 1.0,
-    time_window: int = 300,
-    theme: str = "default"
+    time_window: int = 300
 ) -> int:
     """Run the HWInfo TUI application."""
     app = HWInfoApp(
         csv_path=csv_path,
         sensor_names=sensor_names,
         refresh_rate=refresh_rate,
-        time_window=time_window,
-        theme=theme
+        time_window=time_window
     )
 
     return app.run()

@@ -164,11 +164,6 @@ def monitor(
         min=10,
         max=7200,
         help="History window in seconds (10-7200)"
-    ),
-    theme: str = typer.Option(
-        "default",
-        "--theme", "-t",
-        help="Color theme (default/dark/matrix)"
     )
 ) -> None:
     """
@@ -213,7 +208,7 @@ def monitor(
     console.print(f"[green]Starting HWInfo TUI v{__version__}[/green]")
     console.print(f"[blue]CSV File:[/blue] {csv_path}")
     console.print(f"[blue]Sensors:[/blue] {len(validated_sensors)} selected")
-    console.print(f"[blue]Settings:[/blue] {refresh_rate}s refresh, {time_window}s window, {theme} theme")
+    console.print(f"[blue]Settings:[/blue] {refresh_rate}s refresh, {time_window}s window")
     console.print()
 
     # Import and run the main application
@@ -223,8 +218,7 @@ def monitor(
             csv_path=csv_path,
             sensor_names=validated_sensors,
             refresh_rate=refresh_rate,
-            time_window=time_window,
-            theme=theme
+            time_window=time_window
         )
     except KeyboardInterrupt:
         console.print("\n[yellow]Interrupted by user[/yellow]")

@@ -35,7 +35,6 @@ class HWInfoLayout:
         # State
         self.paused = False
         self.compact_mode = False
-        self.current_theme = "default"
 
         # Color management - improved colors for better terminal visibility
         self.rgb_colors = [
@@ -115,35 +114,6 @@ class HWInfoLayout:
 
         return self.root_layout
 
-    def _update_header(self, csv_path: str, sensor_count: int, time_window: int, refresh_rate: float) -> None:
-        """Update the header layout."""
-        status_items = []
-
-        # File info
-        filename = csv_path.split('/')[-1] if '/' in csv_path else csv_path.split('\\')[-1]
-        status_items.append(f"[blue]File:[/blue] {filename}")
-
-        # Sensor count
-        status_items.append(f"[blue]Sensors:[/blue] {sensor_count}")
-
-        # Time window
-        time_str = self._format_time_duration(time_window)
-        status_items.append(f"[blue]Window:[/blue] {time_str}")
-
-        # Refresh rate
-        status_items.append(f"[blue]Rate:[/blue] {refresh_rate}s")
-
-        # Pause status
-        if self.paused:
-            status_items.append("[yellow]PAUSED[/yellow]")
-
-        # Compact mode indicator
-        if self.compact_mode:
-            status_items.append("[dim]Compact[/dim]")
-
-        " • ".join(status_items)
-        # Note: header_layout not implemented in header-less design
-        # self.header_layout.update(Text(header_text, style="bold"))
 
     def _update_full_body(
         self,
@@ -232,34 +202,6 @@ class HWInfoLayout:
 
             chart_layout.update(chart_mixin)
 
-    def _update_footer(self, stats: dict[str, SensorStats], sensor_groups: list[SensorGroup]) -> None:
-        """Update the footer layout."""
-        footer_content = []
-
-        # Status indicators
-        status_text = self.stats_table.create_status_indicators(stats)
-        footer_content.append(status_text)
-
-        # Control hints
-        controls = [
-            "[green]Q[/green]:Quit",
-            "[green]Space[/green]:Pause",
-            "[green]R[/green]:Reset"
-        ]
-
-        if not self.compact_mode:
-            controls.extend([
-                "[green]C[/green]:Theme",
-                "[green]+/-[/green]:Zoom"
-            ])
-
-        controls_text = Text(" • ".join(controls), style="dim")
-        footer_content.append(Text(""))  # Spacer
-        footer_content.append(controls_text)
-
-        Group(*footer_content)
-        # Note: footer_layout not implemented in header-less design
-        # self.footer_layout.update(Panel(footer_group, style="dim"))
 
     def _create_sensor_groups(self, sensors: dict[str, Sensor]) -> list[SensorGroup]:
         """Create sensor groups from sensors dictionary."""
@@ -267,37 +209,7 @@ class HWInfoLayout:
         unit_filter = UnitFilter()
         return unit_filter.create_sensor_groups(sensors)
 
-    def _format_time_duration(self, seconds: int) -> str:
-        """Format time duration for display."""
-        if seconds < 60:
-            return f"{seconds}s"
-        elif seconds < 3600:
-            minutes = seconds // 60
-            return f"{minutes}m"
-        else:
-            hours = seconds // 3600
-            minutes = (seconds % 3600) // 60
-            if minutes == 0:
-                return f"{hours}h"
-            else:
-                return f"{hours}h{minutes}m"
-
     def toggle_pause(self) -> bool:
         """Toggle pause state and return new state."""
         self.paused = not self.paused
         return self.paused
-
-    def set_theme(self, theme: str) -> None:
-        """Set the display theme."""
-        self.current_theme = theme
-        # Theme changes would be applied to chart and table styling
-
-    def get_layout_info(self) -> dict[str, Any]:
-        """Get information about the current layout."""
-        width, height = self.get_terminal_size()
-        return {
-            "terminal_size": (width, height),
-            "compact_mode": self.compact_mode,
-            "paused": self.paused,
-            "theme": self.current_theme
-        }
