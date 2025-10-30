@@ -126,7 +126,9 @@ class HWInfoApp:
                 self._create_initial_display(),
                 console=self.console,
                 refresh_per_second=max(1.0 / self.refresh_rate, 1),
-                transient=False
+                transient=False,
+                screen=True,
+                vertical_overflow="visible"
             ) as live:
                 self._main_loop(live)
 

@@ -36,13 +36,13 @@ class StatsTable:
             width=None
         )
 
-        # Add columns
-        table.add_column("Sensor", style="bold", no_wrap=True, min_width=20)
-        table.add_column("Last", justify="right", min_width=10)
-        table.add_column("Min", justify="right", min_width=10)
-        table.add_column("Max", justify="right", min_width=10)
-        table.add_column("Avg", justify="right", min_width=10)
-        table.add_column("P95", justify="right", min_width=10)
+        # Add columns - Sensor column can expand to use available space
+        table.add_column("Sensor", style="bold", no_wrap=True, min_width=20, ratio=2)
+        table.add_column("Last", justify="right", min_width=10, max_width=15)
+        table.add_column("Min", justify="right", min_width=10, max_width=15)
+        table.add_column("Max", justify="right", min_width=10, max_width=15)
+        table.add_column("Avg", justify="right", min_width=10, max_width=15)
+        table.add_column("P95", justify="right", min_width=10, max_width=15)
 
         # Add sensor rows directly (no grouping)
         for sensor_stats in stats.values():
@@ -92,15 +92,12 @@ class StatsTable:
         )
 
     def _get_display_name(self, sensor_name: str) -> str:
-        """Get a shortened display name for the sensor."""
+        """Get a display name for the sensor."""
         # Remove unit suffix if present
         import re
         name = re.sub(r'\s*\[[^\]]+\]', '', sensor_name).strip()
 
-        # Shorten long names
-        if len(name) > 25:
-            name = name[:22] + "..."
-
+        # Let Rich handle wrapping/truncation based on available space
         return name
 
     def _get_colored_display_name(self, sensor_name: str, sensor_colors: dict[str, tuple]) -> Text:
@@ -217,9 +214,9 @@ class CompactTable:
             width=None
         )
 
-        # Add columns
-        table.add_column("Sensor", style="bold", no_wrap=True, min_width=15)
-        table.add_column("Value", justify="right", min_width=12)
+        # Add columns - Sensor expands to use available space
+        table.add_column("Sensor", style="bold", no_wrap=True, min_width=15, ratio=3)
+        table.add_column("Value", justify="right", min_width=12, max_width=20)
 
         # Add rows
         for sensor_stats in stats.values():
@@ -234,14 +231,11 @@ class CompactTable:
         return table
 
     def _get_short_name(self, sensor_name: str) -> str:
-        """Get a very short name for the sensor."""
+        """Get display name for the sensor in compact view."""
         import re
         name = re.sub(r'\s*\[[^\]]+\]', '', sensor_name).strip()
 
-        # Very aggressive shortening for compact view
-        if len(name) > 15:
-            name = name[:12] + "..."
-
+        # Let Rich handle truncation based on available space
         return name
 
     def _get_colored_short_name(self, sensor_name: str, sensor_colors: dict[str, tuple]) -> Text:

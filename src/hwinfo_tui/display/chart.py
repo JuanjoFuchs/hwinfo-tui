@@ -25,7 +25,8 @@ class PlotextMixin(JupyterMixin):
         sensor_groups: list[SensorGroup],
         time_window_seconds: int = 300,
         title: str = "Hardware Sensor Monitoring",
-    sensor_colors: dict[str, tuple] | None = None
+        sensor_colors: dict[str, tuple] | None = None,
+        explicit_height: int | None = None
     ) -> None:
         """Initialize the plotext mixin."""
         self.sensors = sensors
@@ -35,13 +36,16 @@ class PlotextMixin(JupyterMixin):
         self.decoder = AnsiDecoder()
         # Use provided sensor colors from layout
         self.sensor_colors = sensor_colors or {}
+        # Store explicit height if provided
+        self.explicit_height = explicit_height
 
     def __rich_console__(self, console: Console, options: ConsoleOptions) -> Generator[RenderableType, None, None]:
         """Render the plotext chart for Rich console."""
         try:
             # Get available dimensions
             width = options.max_width or console.width
-            height = options.height or 15  # Default height
+            # Use explicit height if provided, otherwise fall back to options or default
+            height = self.explicit_height or options.height or 15
 
             # Create the plotext chart
             chart_str = self._create_plotext_chart(width, height)
@@ -60,9 +64,12 @@ class PlotextMixin(JupyterMixin):
         plt.clear_data()
         plt.clear_color()
 
+        # Disable plotext's default size limiter to allow charts larger than ~25 lines
+        plt.limit_size(False, False)
+
         # Configure plot size to use all available space
         chart_width = max(width - 2, 40)  # Minimal margin for text wrapping
-        chart_height = max(height - 2, 10)  # Minimal margin for title/labels
+        chart_height = max(height, 10)  # Use full height allocated by layout
         plt.plotsize(chart_width, chart_height)
 
         # Color mappings are provided by layout
@@ -323,12 +330,14 @@ class PlotextMixin(JupyterMixin):
     def _create_empty_chart(self, width: int, height: int) -> str:
         """Create empty chart placeholder."""
         plt.clear_data()
+        plt.limit_size(False, False)
         plt.plotsize(width, height)
         return plt.build()  # type: ignore
 
     def _create_error_chart(self, error: str, width: int, height: int) -> str:
         """Create error chart placeholder."""
         plt.clear_data()
+        plt.limit_size(False, False)
         plt.plotsize(width, height)
         return plt.build()  # type: ignore
 
@@ -356,7 +365,8 @@ class SensorChart:
             sensors=sensors,
             sensor_groups=sensor_groups,
             time_window_seconds=time_window_seconds,
-            sensor_colors=sensor_colors or {}
+            sensor_colors=sensor_colors or {},
+            explicit_height=height
         )
         # Store the mixin so we can access color mappings later
         self.current_chart = chart_mixin

@@ -63,6 +63,11 @@ class HWInfoLayout:
         width, height = self.get_terminal_size()
         return width < 100 or height < 20
 
+    def should_use_compact_table(self) -> bool:
+        """Determine if compact table (fewer columns) should be used based on width."""
+        width, height = self.get_terminal_size()
+        return width < 100
+
     def _assign_sensor_colors(self, sensors: dict[str, Sensor]) -> None:
         """Assign RGB colors to sensors deterministically based on sensor names."""
         # Get all sensor names and sort them for consistent ordering
@@ -151,7 +156,8 @@ class HWInfoLayout:
     ) -> None:
         """Update body layout for full display mode."""
         # Calculate available space for body (no header)
-        available_height = height - 1  # Account for minimal padding
+        # With screen=True, use full height without padding
+        available_height = height
 
         # Split body into table and chart sections - minimize table, maximize chart
         table_height = min(len(stats) + 3, max(6, available_height // 6))  # Compact table, at least 6 lines, max 1/6 of space
@@ -162,13 +168,18 @@ class HWInfoLayout:
 
         self.body_layout.split_column(table_layout, chart_layout)
 
-        # Create chart mixin with color information
+        # Create chart mixin with color information and explicit height
         chart_mixin = self.chart.create_chart(
-            sensors, sensor_groups, time_window, sensor_colors=self.sensor_colors
+            sensors, sensor_groups, time_window,
+            height=chart_height,
+            sensor_colors=self.sensor_colors
         )
 
-        # Update table with color information
-        table = self.stats_table.create_table(stats, sensor_groups, time_window, self.sensor_colors)
+        # Update table with color information - choose table based on width only
+        if self.should_use_compact_table():
+            table = self.compact_table.create_table(stats, self.sensor_colors)
+        else:
+            table = self.stats_table.create_table(stats, sensor_groups, time_window, self.sensor_colors)
         table_layout.update(table)
 
         chart_layout.update(chart_mixin)
@@ -184,26 +195,39 @@ class HWInfoLayout:
         width, height = self.get_terminal_size()
 
         if height < 15:
-            # Very small terminal - table only
-            table = self.compact_table.create_table(stats, self.sensor_colors)
+            # Very small terminal - table only, choose table based on width
+            if self.should_use_compact_table():
+                table = self.compact_table.create_table(stats, self.sensor_colors)
+            else:
+                # Import sensor_groups for full table
+                sensor_groups = self._create_sensor_groups(sensors)
+                table = self.stats_table.create_table(stats, sensor_groups, time_window, self.sensor_colors)
             self.body_layout.update(table)
         else:
-            # Small terminal - compact table + mini chart
+            # Small terminal - table + mini chart, choose table based on width
             table_height = min(len(stats) + 3, height // 2)
+            chart_height = height - table_height
 
             table_layout = Layout(size=table_height)
-            chart_layout = Layout()
+            chart_layout = Layout(size=chart_height)
 
             self.body_layout.split_column(table_layout, chart_layout)
 
-            # Compact table
-            table = self.compact_table.create_table(stats, self.sensor_colors)
+            # Create sensor groups once for both table and chart
+            sensor_groups = self._create_sensor_groups(sensors)
+
+            # Choose table type based on width, not height
+            if self.should_use_compact_table():
+                table = self.compact_table.create_table(stats, self.sensor_colors)
+            else:
+                table = self.stats_table.create_table(stats, sensor_groups, time_window, self.sensor_colors)
             table_layout.update(table)
 
-            # Mini chart (no panel border)
-            sensor_groups = self._create_sensor_groups(sensors)
+            # Mini chart (no panel border) with explicit height
             chart_mixin = self.chart.create_chart(
-                sensors, sensor_groups, time_window, sensor_colors=self.sensor_colors
+                sensors, sensor_groups, time_window,
+                height=chart_height,
+                sensor_colors=self.sensor_colors
             )
 
             chart_layout.update(chart_mixin)
