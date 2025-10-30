@@ -4,6 +4,11 @@ on:
   release:
     types: [released]
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag (e.g., v1.0.2)'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -13,11 +18,45 @@ jobs:
     runs-on: windows-latest
 
     steps:
+      - name: Get release information
+        id: release
+        shell: pwsh
+        run: |
+          # Determine the tag: use input if manual, otherwise from event
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            $tag = "${{ inputs.release_tag }}"
+            Write-Output "Manual trigger with tag: $tag"
+
+            # Fetch release data from GitHub API
+            $releaseUrl = "https://api.github.com/repos/${{ github.repository }}/releases/tags/$tag"
+            Write-Output "Fetching release data from: $releaseUrl"
+
+            try {
+              $release = Invoke-RestMethod -Uri $releaseUrl -Headers @{
+                "Accept" = "application/vnd.github+json"
+                "X-GitHub-Api-Version" = "2022-11-28"
+              }
+              $assets = $release.assets | ConvertTo-Json -Compress
+            } catch {
+              Write-Error "Failed to fetch release data: $_"
+              exit 1
+            }
+          } else {
+            $tag = "${{ github.event.release.tag_name }}"
+            $assets = '${{ toJson(github.event.release.assets) }}'
+            Write-Output "Automatic trigger from release: $tag"
+          }
+
+          # Output for next steps
+          Write-Output "tag=$tag" >> $env:GITHUB_OUTPUT
+          Write-Output "assets=$assets" >> $env:GITHUB_OUTPUT
+          Write-Output "Tag: $tag"
+
       - name: Extract version from tag
         id: version
         shell: pwsh
         run: |
-          $tag = "${{ github.event.release.tag_name }}"
+          $tag = "${{ steps.release.outputs.tag }}"
           # Remove 'v' prefix if present (v1.0.1 -> 1.0.1)
           $version = $tag -replace '^v', ''
           Write-Output "version=$version" >> $env:GITHUB_OUTPUT
@@ -27,7 +66,7 @@ jobs:
         id: installer
         shell: pwsh
         run: |
-          $assets = '${{ toJson(github.event.release.assets) }}' | ConvertFrom-Json
+          $assets = '${{ steps.release.outputs.assets }}' | ConvertFrom-Json
           # Find the Windows x64 executable
           $exe = $assets | Where-Object { $_.name -match 'hwinfo-tui-.*-windows-x64\.exe$' }
           if ($null -eq $exe) {
