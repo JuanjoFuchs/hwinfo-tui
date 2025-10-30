@@ -1,0 +1,75 @@
+name: Publish to WinGet
+
+on:
+  release:
+    types: [released]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish-to-winget:
+    runs-on: windows-latest
+
+    steps:
+      - name: Extract version from tag
+        id: version
+        shell: pwsh
+        run: |
+          $tag = "${{ github.event.release.tag_name }}"
+          # Remove 'v' prefix if present (v1.0.1 -> 1.0.1)
+          $version = $tag -replace '^v', ''
+          Write-Output "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Output "Extracted version: $version"
+
+      - name: Extract installer URL
+        id: installer
+        shell: pwsh
+        run: |
+          $assets = '${{ toJson(github.event.release.assets) }}' | ConvertFrom-Json
+          # Find the Windows x64 executable
+          $exe = $assets | Where-Object { $_.name -match 'hwinfo-tui-.*-windows-x64\.exe$' }
+          if ($null -eq $exe) {
+            Write-Error "Windows x64 executable not found in release assets"
+            exit 1
+          }
+          $url = $exe.browser_download_url
+          Write-Output "installer_url=$url" >> $env:GITHUB_OUTPUT
+          Write-Output "Found installer: $($exe.name)"
+          Write-Output "URL: $url"
+
+      - name: Download WinGet Create
+        shell: pwsh
+        run: |
+          Write-Output "Downloading wingetcreate.exe..."
+          Invoke-WebRequest -Uri https://aka.ms/wingetcreate/latest -OutFile wingetcreate.exe
+          Write-Output "wingetcreate.exe downloaded successfully"
+
+      - name: Update WinGet package
+        shell: pwsh
+        env:
+          WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+        run: |
+          $packageId = "JuanjoFuchs.hwinfo-tui"
+          $version = "${{ steps.version.outputs.version }}"
+          $url = "${{ steps.installer.outputs.installer_url }}"
+
+          Write-Output "Updating WinGet package..."
+          Write-Output "Package ID: $packageId"
+          Write-Output "Version: $version"
+          Write-Output "Installer URL: $url"
+
+          # Update the package and submit PR to winget-pkgs
+          .\wingetcreate.exe update $packageId `
+            --version $version `
+            --urls $url `
+            --token $env:WINGET_TOKEN `
+            --submit
+
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "wingetcreate failed with exit code $LASTEXITCODE"
+            exit $LASTEXITCODE
+          }
+
+          Write-Output "WinGet package updated successfully!"
