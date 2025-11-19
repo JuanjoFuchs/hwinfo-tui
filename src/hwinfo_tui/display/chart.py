@@ -96,7 +96,7 @@ class PlotextMixin(JupyterMixin):
                     timestamps, values = self._get_sensor_data_in_range(sensor, start_time, latest_time)
                     if timestamps and values:
                         time_values = [(ts - start_time).total_seconds() for ts in timestamps]
-                        color = self._rgb_to_plotext_color(self.sensor_colors.get(sensor_name, (255, 255, 255)))
+                        color = self.sensor_colors.get(sensor_name, (255, 255, 255))
                         try:
                             plt.plot(time_values, values, color=color, marker="braille", xside="lower", yside="left")
                         except Exception as e:
@@ -109,7 +109,7 @@ class PlotextMixin(JupyterMixin):
                     timestamps, values = self._get_sensor_data_in_range(sensor, start_time, latest_time)
                     if timestamps and values:
                         time_values = [(ts - start_time).total_seconds() for ts in timestamps]
-                        color = self._rgb_to_plotext_color(self.sensor_colors.get(sensor_name, (255, 255, 255)))
+                        color = self.sensor_colors.get(sensor_name, (255, 255, 255))
                         try:
                             plt.plot(time_values, values, color=color, marker="braille", xside="lower", yside="right")
                         except Exception as e:
@@ -128,7 +128,7 @@ class PlotextMixin(JupyterMixin):
                 time_values = [(ts - start_time).total_seconds() for ts in timestamps]
 
                 # Plot with error handling
-                color = self._rgb_to_plotext_color(self.sensor_colors.get(sensor_name, (255, 255, 255)))
+                color = self.sensor_colors.get(sensor_name, (255, 255, 255))
 
                 try:
                     # Use line plot with braille markers
@@ -149,30 +149,6 @@ class PlotextMixin(JupyterMixin):
         except Exception as e:
             logger.error(f"Failed to build chart: {e}")
             return self._create_error_chart(str(e), chart_width, chart_height)
-
-    def _rgb_to_plotext_color(self, rgb_tuple: tuple) -> Any:
-        """Convert RGB tuple to plotext color format."""
-        r, g, b = rgb_tuple
-        # Plotext supports RGB colors as tuples or as color names
-        # For better compatibility, we'll map to the closest standard color
-        color_map = {
-            (255, 100, 100): "red",      # Bright red
-            (100, 255, 100): "green",    # Bright green
-            (100, 150, 255): "blue",     # Bright blue
-            (255, 255, 100): "yellow",   # Bright yellow
-            (255, 100, 255): "magenta",  # Bright magenta
-            (100, 255, 255): "cyan",     # Bright cyan
-            (255, 180, 100): "orange",   # Orange
-            (180, 100, 255): "violet",   # Purple
-        }
-
-        # Return the mapped color or use RGB tuple format for plotext
-        mapped_color = color_map.get(rgb_tuple)
-        if mapped_color:
-            return mapped_color
-        else:
-            # Try to use RGB tuple directly (plotext may accept this)
-            return rgb_tuple
 
     def _get_latest_timestamp(self) -> datetime | None:
         """Get the latest timestamp across all sensors."""
@@ -261,6 +237,8 @@ class PlotextMixin(JupyterMixin):
                 # Set exactly 2 ticks: No at 0, Yes at 1
                 tick_positions = [0.0, 1.0]
                 tick_labels = ["No", "Yes"]
+                # Constrain Y-axis to [0, 1] range to ensure No is at bottom
+                plt.ylim(0.0, 1.0, yside=axis_side)
             else:
                 # Get data range from sensors in this group
                 min_val, max_val = self._get_sensor_group_range(sensor_group)
@@ -278,10 +256,7 @@ class PlotextMixin(JupyterMixin):
                     tick_labels = [f"{pos:.1f}" for pos in tick_positions]
 
             # Apply ticks to the specified axis
-            if axis_side == "right":
-                plt.yticks(tick_positions, tick_labels, yside="right")
-            else:
-                plt.yticks(tick_positions, tick_labels, yside="left")
+            plt.yticks(tick_positions, tick_labels, yside=axis_side)
 
         except Exception as e:
             logger.warning(f"Failed to set {axis_side} axis ticks: {e}")
