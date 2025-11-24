@@ -94,7 +94,9 @@ hwinfo-tui JuanjoFuchs.hwinfo-tui 1.0.3   winget
 
 ### Manual Process
 
-After the workflow creates the WinGet PR:
+**Note:** This manual step was only required **once** for version 1.0.3. After adding `UpgradeBehavior` to the manifest, `wingetcreate` automatically preserves this field when updating to subsequent versions since it uses the previous version's manifest as a template.
+
+**For the first time** (or if starting from a manifest without UpgradeBehavior):
 
 1. Go to the created PR in [microsoft/winget-pkgs](https://github.com/microsoft/winget-pkgs/pulls)
 2. Edit the `JuanjoFuchs.hwinfo-tui.installer.yaml` file
@@ -111,9 +113,11 @@ Commands:
 - hwinfo-tui
 ```
 
+**For subsequent versions**: No manual action needed - the field is automatically preserved.
+
 ### Future Automation
 
-A GitHub issue has been filed with microsoft/winget-create requesting support for setting `UpgradeBehavior` via command-line: [link to be added]
+A GitHub issue has been filed with microsoft/winget-create requesting support for setting `UpgradeBehavior` via command-line: [microsoft/winget-create#632](https://github.com/microsoft/winget-create/issues/632)
 
 Once this feature is available, the workflow can be updated to include:
 ```bash
@@ -127,6 +131,11 @@ wingetcreate update JuanjoFuchs.hwinfo-tui \
 
 ## Related WinGet Issues
 
+**Issues Filed by This Project:**
+- [microsoft/winget-cli#5851 - Portable apps should default to UpgradeBehavior: uninstallPrevious](https://github.com/microsoft/winget-cli/issues/5851)
+- [microsoft/winget-create#632 - Add --upgrade-behavior parameter to update command](https://github.com/microsoft/winget-create/issues/632)
+
+**Related Existing Issues:**
 - [#1865 - Upgrading an application does not remove the existing version](https://github.com/microsoft/winget-cli/issues/1865)
 - [#2727 - Switch for --uninstallPrevious for upgrade](https://github.com/microsoft/winget-cli/issues/2727)
 - [#5615 - Winget doesn't remove older version when upgrading certain packages](https://github.com/microsoft/winget-cli/issues/5615)
