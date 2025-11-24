@@ -28,7 +28,8 @@
       "Bash(pytest:*)",
       "Bash(gh pr view:*)",
       "Bash(gh search:*)",
-      "Bash(ruff check:*)"
+      "Bash(ruff check:*)",
+      "Bash(mypy:*)"
     ],
     "deny": [],
     "ask": [],

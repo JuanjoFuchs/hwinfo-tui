@@ -11,11 +11,11 @@ from threading import Event, Thread
 from typing import TYPE_CHECKING, Any, Callable
 
 if TYPE_CHECKING:
-    pass
+    from watchdog.observers import Observer
 
 import pandas as pd
 from watchdog.events import FileSystemEventHandler
-from watchdog.observers import Observer
+from watchdog.observers import Observer as WatchdogObserver
 
 from .sensors import Sensor, SensorInfo
 
@@ -46,7 +46,7 @@ class CSVReader:
         self.sensors: dict[str, Sensor] = {}
         self.headers: list[str] = []
         self.last_position = 0
-        self.observer: Observer | None = None  # type: ignore
+        self.observer: Any = None
         self.monitoring = False
         self.stop_event = Event()
         self.encoding = 'utf-8-sig'  # Default encoding, will be set during header reading
@@ -241,7 +241,7 @@ class CSVReader:
         # Set up file watcher
         if callback:
             handler = CSVFileHandler(self.csv_path, callback)
-            self.observer = Observer()
+            self.observer = WatchdogObserver()
             self.observer.schedule(handler, str(self.csv_path.parent), recursive=False)
             self.observer.start()
 
@@ -270,7 +270,7 @@ class CSVReader:
         self.stop_event.set()
 
         if self.observer:
-            self.observer.stop()  # type: ignore[unreachable]
+            self.observer.stop()
             self.observer.join(timeout=5.0)
             self.observer = None
 
