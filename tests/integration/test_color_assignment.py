@@ -4,16 +4,15 @@ Tests verify that colors are assigned consistently and flow correctly
 from layout to chart to table components.
 """
 
-import pytest
 from unittest.mock import Mock
 
 from rich.console import Console
 
 from hwinfo_tui.data.csv_reader import CSVReader
-from hwinfo_tui.display.layout import HWInfoLayout
 from hwinfo_tui.display.chart import SensorChart
-from hwinfo_tui.utils.units import UnitFilter
+from hwinfo_tui.display.layout import HWInfoLayout
 from hwinfo_tui.utils.stats import StatsCalculator
+from hwinfo_tui.utils.units import UnitFilter
 
 
 class TestColorAssignment:
@@ -203,7 +202,6 @@ class TestColorPalette:
 
     def test_palette_has_distinct_colors(self):
         """Test that the first 8 colors in the palette are distinct."""
-        from hwinfo_tui.display.layout import HWInfoLayout
 
         # Get the RGB palette
         rgb_palette = [

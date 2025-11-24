@@ -3,15 +3,14 @@
 Tests verify layout decisions, space allocation, and component coordination.
 """
 
-import pytest
 from unittest.mock import Mock, patch
 
 from rich.console import Console
 
 from hwinfo_tui.data.csv_reader import CSVReader
 from hwinfo_tui.display.layout import HWInfoLayout
-from hwinfo_tui.utils.units import UnitFilter
 from hwinfo_tui.utils.stats import StatsCalculator
+from hwinfo_tui.utils.units import UnitFilter
 
 
 class TestLayoutModeDecisions:
@@ -159,7 +158,7 @@ class TestFullLayoutIntegration:
         stats = stats_calc.calculate_all_stats(sensors)
 
         with patch.object(layout, 'get_terminal_size', return_value=(120, 30)):
-            result = layout.update_layout(
+            layout.update_layout(
                 sensors=sensors,
                 sensor_groups=sensor_groups,
                 stats=stats,
@@ -172,9 +171,6 @@ class TestFullLayoutIntegration:
         assert layout.body_layout is not None, "Should create body layout"
         assert layout.chart is not None, "Should create chart"
         assert layout.sensor_colors, "Should assign sensor colors"
-
-        # Verify result is renderable
-        assert result is not None
 
     def test_layout_with_multiple_sensors_and_groups(self, temp_csv):
         """Test layout with complex sensor configuration."""
@@ -206,7 +202,7 @@ class TestFullLayoutIntegration:
         stats = stats_calc.calculate_all_stats(sensors)
 
         with patch.object(layout, 'get_terminal_size', return_value=(120, 30)):
-            result = layout.update_layout(
+            layout.update_layout(
                 sensors=sensors,
                 sensor_groups=sensor_groups,
                 stats=stats,

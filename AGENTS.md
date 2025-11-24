@@ -1,0 +1,3 @@
+- Read README.md and DEVELOPMENT.md
+- The python venv is already loaded, you can just call `python` directly
+- hwinfo-tui is a cli application installed on the venv in editable mode

@@ -3,11 +3,9 @@
 from __future__ import annotations
 
 import os
-from typing import Any
 
-from rich.console import Console, Group
+from rich.console import Console
 from rich.layout import Layout
-from rich.text import Text
 
 from ..data.sensors import Sensor, SensorGroup
 from ..utils.stats import SensorStats

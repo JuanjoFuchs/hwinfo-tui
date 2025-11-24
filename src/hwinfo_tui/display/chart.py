@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Generator
+from typing import Generator
 
 import plotext as plt
 from rich.ansi import AnsiDecoder

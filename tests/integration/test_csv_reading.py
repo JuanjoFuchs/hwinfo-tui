@@ -3,8 +3,6 @@
 Tests verify CSV parsing, encoding handling, sensor matching, and data reading.
 """
 
-import pytest
-from pathlib import Path
 
 from hwinfo_tui.data.csv_reader import CSVReader
 

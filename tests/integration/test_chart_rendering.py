@@ -5,9 +5,7 @@ the critical dual-axis and single-axis code paths that would have
 caught the missing function call bug.
 """
 
-import pytest
-from unittest.mock import patch, call
-from pathlib import Path
+from unittest.mock import patch
 
 from hwinfo_tui.data.csv_reader import CSVReader
 from hwinfo_tui.display.chart import SensorChart

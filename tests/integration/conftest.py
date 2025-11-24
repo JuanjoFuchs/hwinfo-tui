@@ -1,10 +1,9 @@
 """Fixtures and utilities for integration tests."""
 
-import pytest
-from pathlib import Path
 from datetime import datetime, timedelta
 from unittest.mock import Mock
 
+import pytest
 from rich.console import Console
 
 
@@ -45,7 +44,7 @@ def temp_csv(tmp_path):
             time_str = timestamp.strftime("%H:%M:%S.%f")[:-3]  # Include milliseconds
 
             values = [date_str, time_str]
-            for name, unit in sensors:
+            for _name, unit in sensors:
                 if unit == "Yes/No":
                     # Alternate between Yes and No
                     values.append("Yes" if i % 2 == 0 else "No")
