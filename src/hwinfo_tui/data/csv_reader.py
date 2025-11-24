@@ -8,10 +8,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 from threading import Event, Thread
-from typing import TYPE_CHECKING, Any, Callable
-
-if TYPE_CHECKING:
-    from watchdog.observers import Observer
+from typing import Any, Callable
 
 import pandas as pd
 from watchdog.events import FileSystemEventHandler
