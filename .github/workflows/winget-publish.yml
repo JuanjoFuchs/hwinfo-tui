@@ -100,10 +100,15 @@ jobs:
           Write-Output "Installer URL: $url"
 
           # Update the package and submit PR to winget-pkgs
-          # NOTE: wingetcreate does not support setting UpgradeBehavior via CLI (as of v1.10.3)
-          # After this workflow creates the PR, manually add the following line to the installer manifest:
-          #   UpgradeBehavior: uninstallPrevious
-          # This ensures the old version is removed during upgrade, preventing duplicate entries.
+          #
+          # NOTE: UpgradeBehavior field management (as of v1.10.3):
+          # - wingetcreate does not support setting UpgradeBehavior via CLI
+          # - However, it DOES preserve existing manifest fields when updating
+          # - UpgradeBehavior: uninstallPrevious was manually added in v1.0.3 (PR #308745, commit 294d4f4)
+          # - All subsequent versions automatically include it since wingetcreate uses the previous
+          #   version's manifest as a template
+          # - No manual addition is needed anymore for future releases
+          #
           # See docs/winget-upgrade-behavior.md for details.
           .\wingetcreate.exe update $packageId `
             --version $version `
