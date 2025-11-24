@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.4] - 2025-01-19
+
+### Fixed
+- Color mismatch between stats table and chart - now uses RGB tuples consistently
+- Yes/No sensor axis positioning - "No" now always appears at bottom (0) and "Yes" at top (1)
+
+### Added
+- Comprehensive integration test suite with 43 tests covering all critical code paths
+- Test fixtures for reproducible testing scenarios
+- Chart rendering tests that verify dual-axis and single-axis modes
+- Color assignment tests ensuring consistency across components
+- Layout integration tests for terminal size decisions
+- CSV reading tests for edge cases and malformed data
+
+### Changed
+- Removed redundant color conversion function for cleaner code
+- Simplified axis-side parameter handling in chart rendering
+
+## [1.0.3] - 2025-01-XX
+
 ### Added
 - Packaging infrastructure for PyPI and Windows executable distribution
 - GitHub Actions workflows for CI/CD

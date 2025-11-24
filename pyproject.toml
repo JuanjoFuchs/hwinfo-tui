@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hwinfo-tui"
-version = "1.0.3"
+version = "1.0.4"
 description = "A gping-inspired terminal visualization tool for monitoring real-time hardware sensor data from HWInfo"
 authors = [{name = "JuanjoFuchs"}]
 readme = "README.md"
