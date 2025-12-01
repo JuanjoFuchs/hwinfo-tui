@@ -1,7 +1,7 @@
 # 🖥️ HWInfo TUI
 
 [![CI](https://github.com/JuanjoFuchs/hwinfo-tui/actions/workflows/ci.yml/badge.svg)](https://github.com/JuanjoFuchs/hwinfo-tui/actions/workflows/ci.yml) [![Release](https://github.com/JuanjoFuchs/hwinfo-tui/actions/workflows/release.yml/badge.svg)](https://github.com/JuanjoFuchs/hwinfo-tui/actions/workflows/release.yml) [![PyPI - Version](https://img.shields.io/pypi/v/hwinfo-tui)](https://pypi.org/project/hwinfo-tui/) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/hwinfo-tui) [![GitHub Release](https://img.shields.io/github/v/release/JuanjoFuchs/hwinfo-tui)](https://github.com/JuanjoFuchs/hwinfo-tui/releases) 
-[![WinGet Package Version](https://img.shields.io/winget/v/JuanjoFuchs.hwinfo-tui)](https://winget.run/pkg/JuanjoFuchs/hwinfo-tui) [![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
+[![WinGet Package Version](https://img.shields.io/winget/v/JuanjoFuchs.hwinfo-tui)](https://winstall.app/apps/JuanjoFuchs.hwinfo-tui) [![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 
 A terminal plotting tool for visualizing real-time hardware sensor data from HWInfo64 (Windows), inspired by [gping](https://github.com/orf/gping).
 
@@ -36,7 +36,7 @@ hwinfo-tui monitor sensors.CSV "Core Thermal Throttling" "Core Critical Temperat
 
 ### Windows (Recommended)
 
-[![WinGet Package Version](https://img.shields.io/winget/v/JuanjoFuchs.hwinfo-tui)](https://winget.run/pkg/JuanjoFuchs/hwinfo-tui)
+[![WinGet Package Version](https://img.shields.io/winget/v/JuanjoFuchs.hwinfo-tui)](https://winstall.app/apps/JuanjoFuchs.hwinfo-tui)
 
 ```bash
 winget install hwinfo-tui
