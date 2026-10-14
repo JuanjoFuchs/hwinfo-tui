@@ -15,18 +15,18 @@ from rich.live import Live
 
 try:
     # Try relative imports first (normal package usage)
-    from .data.csv_reader import CSVReader
+    from .data.csv_reader import FILE_MISSING, FILE_OK, CSVReader
     from .data.sensors import Sensor
     from .display.layout import HWInfoLayout
     from .utils.stats import StatsCalculator
-    from .utils.units import UnitFilter
+    from .utils.units import UnitFilter, validate_sensor_compatibility
 except ImportError:
     # Fallback to absolute imports (PyInstaller compatibility)
-    from hwinfo_tui.data.csv_reader import CSVReader
+    from hwinfo_tui.data.csv_reader import FILE_MISSING, FILE_OK, CSVReader
     from hwinfo_tui.data.sensors import Sensor
     from hwinfo_tui.display.layout import HWInfoLayout
     from hwinfo_tui.utils.stats import StatsCalculator
-    from hwinfo_tui.utils.units import UnitFilter
+    from hwinfo_tui.utils.units import UnitFilter, validate_sensor_compatibility
 
 # Configure logging
 logging.basicConfig(
@@ -36,22 +36,50 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# How often to look for a usable log while waiting for one.
+WAIT_POLL_SECONDS = 1.0
+
+
+def resolve_sensors(reader: CSVReader, patterns: list[str]) -> tuple[list[str], list[str]]:
+    """Match sensor patterns against the log's header and apply unit filtering.
+
+    Returns (accepted sensor names, patterns that matched no column).
+    """
+    available = [s.lower() for s in reader.get_available_sensors()]
+    missing = [p for p in patterns if not any(p.lower() in s for s in available)]
+    matched = reader.find_matching_sensors(patterns)
+    accepted, _, _ = validate_sensor_compatibility(matched)
+    return accepted, missing
+
 
 class HWInfoApp:
-    """Main HWInfo TUI application."""
+    """Main HWInfo TUI application.
+
+    The log is HWiNFO's to start, stop and recreate, so the app never gives up on
+    it: until the file has a usable header and the requested sensors it shows a
+    waiting screen, and it reopens the file whenever HWiNFO restarts the log.
+    """
 
     def __init__(
         self,
         csv_path: Path,
         sensor_names: list[str],
         refresh_rate: float = 1.0,
-        time_window: int = 300
+        time_window: int = 300,
+        stale_after: int = 15
     ) -> None:
         """Initialize the application."""
         self.csv_path = csv_path
         self.sensor_names = sensor_names
         self.refresh_rate = refresh_rate
         self.time_window = time_window
+        self.stale_after = stale_after
+
+        # Why the log isn't open yet (None once it is), and whether an open log
+        # has since disappeared from disk.
+        self.waiting_reason: str | None = "Starting"
+        self.file_gone = False
+        self._last_open_attempt = 0.0
 
         # Application components
         self.console = Console()
@@ -80,31 +108,87 @@ class HWInfoApp:
             signal.signal(signal.SIGTERM, signal_handler)
 
     def initialize(self) -> bool:
-        """Initialize the application components."""
+        """Try to open the log and start reading it.
+
+        Returns False, with waiting_reason set, while the file is missing, has no
+        usable header or rows yet, or lacks every requested sensor. Never raises:
+        a bad file is something to wait out, not a crash.
+        """
+        self._last_open_attempt = time.time()
+        if not self.csv_path.exists():
+            self.waiting_reason = "The file doesn't exist yet."
+            return False
+
         try:
-            # Initialize CSV reader
-            self.csv_reader = CSVReader(self.csv_path)
-
-            # Initialize sensors
-            self.sensors = self.csv_reader.initialize_sensors(self.sensor_names)
-
-            if not self.sensors:
-                self.console.print("[red]Error:[/red] No sensors could be initialized")
+            reader = CSVReader(self.csv_path)
+            accepted, missing = resolve_sensors(reader, self.sensor_names)
+            if not accepted:
+                self.waiting_reason = (
+                    "None of the requested sensors are in the file yet: " + ", ".join(missing)
+                )
                 return False
 
-            # Read initial data
-            self.csv_reader.read_initial_data(self.time_window)
-
-            # Start monitoring
-            self.csv_reader.start_monitoring(callback=self._on_new_data)
-
-            logger.info(f"Initialized {len(self.sensors)} sensors")
-            return True
+            sensors = reader.initialize_sensors(accepted)
+            reader.read_initial_data(self.time_window)
+            if reader.last_data_time is None:
+                self.waiting_reason = "The file has a header but no data rows yet."
+                return False
 
         except Exception as e:
-            logger.error(f"Failed to initialize application: {e}")
-            self.console.print(f"[red]Error:[/red] {e}")
+            logger.info(f"Log not usable yet: {e}")
+            self.waiting_reason = f"The file isn't a readable HWiNFO log yet ({e})."
             return False
+
+        self._close_reader()
+        self.csv_reader = reader
+        self.sensors = sensors
+        self.csv_reader.start_monitoring(callback=self._on_new_data)
+        self.waiting_reason = None
+        self.file_gone = False
+
+        logger.info(f"Initialized {len(self.sensors)} sensors")
+        return True
+
+    def _close_reader(self) -> None:
+        """Stop and drop the current reader, if any."""
+        if self.csv_reader:
+            self.csv_reader.stop_monitoring()
+        self.csv_reader = None
+
+    def check_log(self) -> None:
+        """Follow the log through HWiNFO starting, stopping and restarting it.
+
+        Called once per refresh. While waiting it retries the open; once open it
+        notices the file disappearing (history stays, marked) and the file being
+        truncated or recreated (reopened from scratch: the old history belongs to
+        a different log).
+        """
+        if self.csv_reader is None:
+            if time.time() - self._last_open_attempt >= WAIT_POLL_SECONDS:
+                self.initialize()
+            return
+
+        state = self.csv_reader.file_state()
+        if state == FILE_MISSING:
+            self.file_gone = True
+            return
+
+        if state != FILE_OK or self.file_gone:
+            logger.info("Log was restarted; reopening it")
+            self._close_reader()
+            self.sensors = {}
+            self.waiting_reason = "HWiNFO restarted its log."
+            self.initialize()
+
+    def status_line(self) -> str | None:
+        """The one-line warning shown above the chart, or None while data is live."""
+        if self.file_gone:
+            return f"Log file is gone: waiting for HWiNFO to log to {self.csv_path} again"
+        if self.csv_reader:
+            age = self.csv_reader.seconds_since_data()
+            if age is not None and age > self.stale_after:
+                return f"Stale: no new data for {int(age)}s, waiting for HWiNFO"
+        return None
 
     def _on_new_data(self) -> None:
         """Callback for when new data is available."""
@@ -114,8 +198,8 @@ class HWInfoApp:
 
     def run(self) -> int:
         """Run the main application loop."""
-        if not self.initialize():
-            return 1
+        # A log that isn't usable yet is waited for on screen, not an error.
+        self.initialize()
 
         self.running.set()
 
@@ -144,6 +228,9 @@ class HWInfoApp:
 
     def _create_initial_display(self) -> Any:
         """Create the initial display layout."""
+        if self.csv_reader is None:
+            return self.layout.waiting_screen(str(self.csv_path), self.waiting_reason)
+
         # Calculate initial stats
         stats = self.stats_calculator.calculate_all_stats(self.sensors)
 
@@ -157,7 +244,8 @@ class HWInfoApp:
             stats=stats,
             time_window=self.time_window,
             refresh_rate=self.refresh_rate,
-            csv_path=str(self.csv_path)
+            csv_path=str(self.csv_path),
+            status=self.status_line()
         )
 
     def _main_loop(self, live: Live) -> None:
@@ -190,9 +278,13 @@ class HWInfoApp:
     def _update_display(self, live: Live) -> None:
         """Update the display with current data."""
         try:
+            self.check_log()
+            if self.csv_reader is None:
+                live.update(self.layout.waiting_screen(str(self.csv_path), self.waiting_reason))
+                return
+
             # Read any new CSV data
-            if self.csv_reader:
-                self.csv_reader.read_new_data()
+            self.csv_reader.read_new_data()
 
             # Calculate current statistics
             stats = self.stats_calculator.calculate_all_stats(self.sensors)
@@ -207,7 +299,8 @@ class HWInfoApp:
                 stats=stats,
                 time_window=self.time_window,
                 refresh_rate=self.refresh_rate,
-                csv_path=str(self.csv_path)
+                csv_path=str(self.csv_path),
+                status=self.status_line()
             )
 
             # Update live display
@@ -267,14 +360,16 @@ def run_application(
     csv_path: Path,
     sensor_names: list[str],
     refresh_rate: float = 1.0,
-    time_window: int = 300
+    time_window: int = 300,
+    stale_after: int = 15
 ) -> int:
     """Run the HWInfo TUI application."""
     app = HWInfoApp(
         csv_path=csv_path,
         sensor_names=sensor_names,
         refresh_rate=refresh_rate,
-        time_window=time_window
+        time_window=time_window,
+        stale_after=stale_after
     )
 
     return app.run()

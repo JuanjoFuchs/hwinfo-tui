@@ -137,7 +137,10 @@ Monitor hardware sensors in real-time.
 **Options:**
 - `-r, --refresh-rate FLOAT` - Update frequency in seconds (0.1-60.0) *[default: 1.0]*
 - `-w, --time-window INTEGER` - History window in seconds (10-7200) *[default: 300]*
+- `--stale-after INTEGER` - Mark the data stale after this many seconds without a new row (3-3600) *[default: 15]*
 - `--help` - Show this message and exit
+
+**Live logs:** `monitor` follows HWiNFO's log for as long as it runs. You can start it before HWiNFO logs, or point it at a file that doesn't exist or isn't readable yet, and it shows a waiting screen until the file has the sensors and data. When HWiNFO stops and restarts logging (truncating or recreating the file), the monitor reopens it on its own. When rows stop arriving, a yellow "Stale" bar says so, and it clears when they resume.
 
 ---
 
@@ -206,9 +209,9 @@ hwinfo-tui monitor sensors.csv "CPU" "GPU"  # Use partial names
 **Too many units excluded**
 - Maximum 2 units supported - group sensors by similar units
 
-**File not found**
-- Ensure HWInfo is actively logging to the CSV file
-- Verify file path and permissions
+**Stuck on "Waiting for HWiNFO to log"**
+- Ensure HWInfo is actively logging to the CSV file (Sensors > Logging start)
+- Verify the file path and permissions; the screen names the file and what is missing
 
 **Poor performance**
 ```bash

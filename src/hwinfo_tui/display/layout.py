@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import os
 
+from rich.align import Align
 from rich.console import Console
 from rich.layout import Layout
+from rich.panel import Panel
+from rich.text import Text
 
 from ..data.sensors import Sensor, SensorGroup
 from ..utils.stats import SensorStats
@@ -94,23 +97,50 @@ class HWInfoLayout:
         stats: dict[str, SensorStats],
         time_window: int,
         refresh_rate: float,
-        csv_path: str
+        csv_path: str,
+        status: str | None = None
     ) -> Layout:
-        """Update the complete layout with current data."""
+        """Update the complete layout with current data.
+
+        A status (the log went stale or disappeared) takes one line above the body,
+        so frozen values never read as live.
+        """
         # Determine display mode
         self.compact_mode = self.should_use_compact_mode()
         width, height = self.get_terminal_size()
+        reserved = 1 if status else 0
 
         # Assign colors to sensors
         self._assign_sensor_colors(sensors)
 
         # Update body based on mode (no header)
         if self.compact_mode:
-            self._update_compact_body(sensors, stats, time_window)
+            self._update_compact_body(sensors, stats, time_window, reserved)
         else:
-            self._update_full_body(sensors, sensor_groups, stats, time_window, width, height)
+            self._update_full_body(sensors, sensor_groups, stats, time_window, width, height - reserved)
 
-        return self.root_layout
+        if not status:
+            return self.root_layout
+
+        framed = Layout()
+        framed.split_column(
+            Layout(Text(f" {status}", style="bold black on yellow", no_wrap=True), size=1),
+            self.body_layout,
+        )
+        return framed
+
+    def waiting_screen(self, csv_path: str, reason: str | None) -> Panel:
+        """The screen shown until the log is usable: which file, and what is missing."""
+        body = Text(justify="center")
+        body.append(f"Waiting for HWiNFO to log to {csv_path}\n\n", style="bold yellow")
+        if reason:
+            body.append(f"{reason}\n\n")
+        body.append(
+            "HWiNFO: Sensors > Logging start. This screen starts by itself once the "
+            "file has the sensors and data.",
+            style="dim",
+        )
+        return Panel(Align.center(body, vertical="middle"), title="HWInfo TUI", border_style="yellow")
 
 
     def _update_full_body(
@@ -156,11 +186,13 @@ class HWInfoLayout:
         self,
         sensors: dict[str, Sensor],
         stats: dict[str, SensorStats],
-        time_window: int
+        time_window: int,
+        reserved: int = 0
     ) -> None:
         """Update body layout for compact display mode."""
         # In compact mode, show table only or simple chart
         width, height = self.get_terminal_size()
+        height -= reserved
 
         if height < 15:
             # Very small terminal - table only, choose table based on width

@@ -141,11 +141,9 @@ def cli_callback(
 def monitor(
     csv_file: Path = typer.Argument(
         ...,
-        help="Path to HWInfo sensors.csv file",
-        exists=True,
+        help="Path to HWInfo sensors.csv file (it may not exist yet: the monitor waits for HWiNFO to log)",
         file_okay=True,
         dir_okay=False,
-        readable=True,
     ),
     sensor_names: list[str] = typer.Argument(
         ...,
@@ -164,6 +162,13 @@ def monitor(
         min=10,
         max=7200,
         help="History window in seconds (10-7200)"
+    ),
+    stale_after: int = typer.Option(
+        15,
+        "--stale-after",
+        min=3,
+        max=3600,
+        help="Mark the data stale after this many seconds without a new row (3-3600)"
     )
 ) -> None:
     """
@@ -197,17 +202,28 @@ def monitor(
     • [green]Q[/green] or [green]Ctrl+C[/green]: Quit application
     • [green]Space[/green]: Pause/resume real-time updates
     • [green]R[/green]: Reset chart view and statistics
-    """
-    # Validate CSV file
-    csv_path = validate_csv_file(csv_file)
 
-    # Validate and filter sensors
-    validated_sensors = validate_sensors_with_csv(csv_path, sensor_names)
+    [bold]Live logs:[/bold]
+
+    The CSV may not exist yet, be half-written, or be restarted by HWiNFO while
+    you watch. The monitor waits on screen until it is usable, reopens it when
+    HWiNFO restarts logging, and marks the data stale when rows stop arriving.
+    """
+    if csv_file.is_dir():
+        console.print(f"[red]Error:[/red] Path is not a file: {csv_file}")
+        raise typer.Exit(1)
+
+    # Preview the sensor selection when the log is already usable. A log that
+    # isn't (missing, corrupted, sensors absent) is waited for by the app instead.
+    if csv_file.is_file():
+        try:
+            validate_sensors_with_csv(validate_csv_file(csv_file), sensor_names)
+        except typer.Exit:
+            console.print("[yellow]The log isn't usable yet; waiting for HWiNFO.[/yellow]")
 
     # Show startup information
     console.print(f"[green]Starting HWInfo TUI v{__version__}[/green]")
-    console.print(f"[blue]CSV File:[/blue] {csv_path}")
-    console.print(f"[blue]Sensors:[/blue] {len(validated_sensors)} selected")
+    console.print(f"[blue]CSV File:[/blue] {csv_file}")
     console.print(f"[blue]Settings:[/blue] {refresh_rate}s refresh, {time_window}s window")
     console.print()
 
@@ -215,10 +231,11 @@ def monitor(
     try:
         from .main import run_application
         run_application(
-            csv_path=csv_path,
-            sensor_names=validated_sensors,
+            csv_path=csv_file,
+            sensor_names=sensor_names,
             refresh_rate=refresh_rate,
-            time_window=time_window
+            time_window=time_window,
+            stale_after=stale_after
         )
     except KeyboardInterrupt:
         console.print("\n[yellow]Interrupted by user[/yellow]")

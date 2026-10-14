@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import csv
+import io
 import logging
+import os
 import time
 from datetime import datetime
 from pathlib import Path
-from threading import Event, Thread
+from threading import Event, Lock, Thread
 from typing import Any, Callable
 
 import pandas as pd
@@ -17,6 +19,19 @@ from watchdog.observers import Observer as WatchdogObserver
 from .sensors import Sensor, SensorInfo
 
 logger = logging.getLogger(__name__)
+
+# HWiNFO headers run to a few KB; anything past this without a newline is not a header.
+MAX_HEADER_BYTES = 1024 * 1024
+
+# What file_state() reports about the log since this reader opened it.
+FILE_OK = "ok"
+FILE_MISSING = "missing"
+FILE_REPLACED = "replaced"
+
+
+def _birth_time(st: os.stat_result) -> float:
+    """Creation time of a file: st_birthtime where available, else st_ctime (Windows)."""
+    return float(getattr(st, "st_birthtime", st.st_ctime))
 
 
 class CSVFileHandler(FileSystemEventHandler):
@@ -47,6 +62,14 @@ class CSVReader:
         self.monitoring = False
         self.stop_event = Event()
         self.encoding = 'utf-8-sig'  # Default encoding, will be set during header reading
+        # The log can be truncated or recreated under us (HWiNFO stops and restarts
+        # logging), so remember what the file looked like when it was opened.
+        self.header_bytes = b""
+        self.birth_time: float | None = None
+        # Wall-clock time the newest row arrived; drives the stale marker.
+        self.last_data_time: float | None = None
+        # The UI loop and the polling thread both call read_new_data.
+        self._read_lock = Lock()
 
         # Validate file exists
         if not csv_path.exists():
@@ -56,36 +79,74 @@ class CSVReader:
         self._read_headers()
 
     def _read_headers(self) -> None:
-        """Read and store CSV headers."""
+        """Read and store CSV headers.
+
+        Raises ValueError when the first line is not a usable header yet (empty file,
+        no newline yet, a single column), so callers can keep waiting for the log.
+        """
         try:
+            with open(self.csv_path, 'rb') as f:
+                st = os.fstat(f.fileno())
+                head = f.read(MAX_HEADER_BYTES)
+
+            newline = head.find(b'\n')
+            if newline < 0:
+                raise ValueError("CSV header is not complete yet")
+            header_bytes = head[:newline + 1]
+
             # Try multiple encodings to handle different CSV exports
             encodings_to_try = ['utf-8-sig', 'utf-8', 'latin1', 'cp1252', 'iso-8859-1']
 
             for encoding in encodings_to_try:
                 try:
-                    with open(self.csv_path, encoding=encoding) as f:
-                        # Read first line as string to avoid iterator issues
-                        first_line = f.readline()
-                        self.last_position = f.tell()
-
-                        # Parse the header line manually
-                        reader = csv.reader([first_line])
-                        self.headers = next(reader)
-
-                    # Store the successful encoding for later use
-                    self.encoding = encoding
-                    logger.info(f"Read {len(self.headers)} headers from {self.csv_path} using {encoding} encoding")
-                    return
-
+                    first_line = header_bytes.decode(encoding)
                 except UnicodeDecodeError:
                     continue  # Try next encoding
 
+                headers = next(csv.reader([first_line.rstrip('\r\n')]), [])
+                if len(headers) < 2:
+                    raise ValueError("CSV header has fewer than two columns")
+
+                self.headers = headers
+                self.encoding = encoding
+                self.header_bytes = header_bytes
+                self.last_position = len(header_bytes)
+                self.birth_time = _birth_time(st)
+                logger.info(f"Read {len(self.headers)} headers from {self.csv_path} using {encoding} encoding")
+                return
+
             # If all encodings failed
-            raise Exception("Could not decode CSV file with any supported encoding")
+            raise ValueError("Could not decode CSV file with any supported encoding")
 
         except Exception as e:
             logger.error(f"Failed to read headers: {e}")
             raise
+
+    def file_state(self) -> str:
+        """Report whether the log is still the file this reader opened.
+
+        FILE_MISSING: the path is gone. FILE_REPLACED: the file was truncated or
+        recreated (shorter than what was already read, a different creation time, or
+        a different first line). FILE_OK otherwise.
+        """
+        try:
+            st = os.stat(self.csv_path)
+            if st.st_size < self.last_position:
+                return FILE_REPLACED
+            if self.birth_time is not None and _birth_time(st) != self.birth_time:
+                return FILE_REPLACED
+            with open(self.csv_path, 'rb') as f:
+                if f.read(len(self.header_bytes)) != self.header_bytes:
+                    return FILE_REPLACED
+        except OSError:
+            return FILE_MISSING
+        return FILE_OK
+
+    def seconds_since_data(self) -> float | None:
+        """Seconds since the newest row arrived, or None before the first row."""
+        if self.last_data_time is None:
+            return None
+        return max(0.0, time.time() - self.last_data_time)
 
     def get_available_sensors(self) -> list[str]:
         """Get list of available sensor names."""
@@ -138,9 +199,28 @@ class CSVReader:
     def read_initial_data(self, window_seconds: int = 300) -> None:
         """Read initial data from the CSV file."""
         try:
+            with open(self.csv_path, 'rb') as f:
+                st = os.fstat(f.fileno())
+                data = f.read()
+
+            # Stop at the last complete line: HWiNFO may be mid-way through writing
+            # the next row, which read_new_data picks up once it is finished. A
+            # finished file without a final newline (an archived log) still counts
+            # its last line, when that line has every column.
+            complete = data.rfind(b'\n') + 1
+            tail = data[complete:]
+            if tail.strip():
+                last = next(csv.reader([tail.decode(self.encoding, errors='replace')]), [])
+                if len(last) == len(self.headers):
+                    complete = len(data)
+            self.last_position = max(complete, len(self.header_bytes))
+            if complete <= len(self.header_bytes):
+                logger.warning("CSV file has no data rows yet")
+                return
+
             # Read the CSV file with error handling for malformed rows
             df = pd.read_csv(
-                self.csv_path,
+                io.BytesIO(data[:complete]),
                 encoding=self.encoding,
                 on_bad_lines='skip',  # Skip malformed lines
                 low_memory=False
@@ -158,10 +238,8 @@ class CSVReader:
             for _, row in df.iterrows():
                 self._process_row(row)
 
-            # Update file position to end
-            with open(self.csv_path, 'rb') as f:
-                f.seek(0, 2)  # Seek to end
-                self.last_position = f.tell()
+            # The newest row is as old as the file's last write.
+            self.last_data_time = st.st_mtime
 
             logger.info(f"Read initial data: {len(df)} rows")
 
@@ -197,35 +275,49 @@ class CSVReader:
             logger.warning(f"Failed to process row: {e}")
 
     def read_new_data(self) -> None:
-        """Read any new data that has been added to the file."""
-        try:
-            with open(self.csv_path, encoding=self.encoding) as f:
-                f.seek(self.last_position)
-                new_content = f.read()
+        """Read any new data that has been added to the file.
 
-                if new_content.strip():
-                    # Split into lines and process
-                    lines = new_content.strip().split('\n')
+        Only complete lines are consumed; a half-written last line stays for the next
+        call. Nothing is read once the file has been truncated or recreated, since
+        the old position means nothing in the new file (the app reopens it instead).
+        """
+        with self._read_lock:
+            try:
+                if self.file_state() != FILE_OK:
+                    return
 
-                    for line in lines:
-                        if line.strip():
-                            try:
-                                # Parse CSV line
-                                reader = csv.reader([line])
-                                values = next(reader)
+                with open(self.csv_path, 'rb') as f:
+                    f.seek(self.last_position)
+                    chunk = f.read()
 
-                                if len(values) == len(self.headers):
-                                    row_dict = dict(zip(self.headers, values))
-                                    self._process_row(row_dict)
+                complete = chunk.rfind(b'\n') + 1
+                if complete == 0:
+                    return
 
-                            except Exception as e:
-                                logger.warning(f"Failed to parse line: {line[:50]}... Error: {e}")
+                rows = 0
+                text = chunk[:complete].decode(self.encoding, errors='replace')
+                for line in text.splitlines():
+                    if not line.strip():
+                        continue
+                    try:
+                        # Parse CSV line
+                        values = next(csv.reader([line]))
+
+                        if len(values) == len(self.headers):
+                            row_dict = dict(zip(self.headers, values))
+                            self._process_row(row_dict)
+                            rows += 1
+
+                    except Exception as e:
+                        logger.warning(f"Failed to parse line: {line[:50]}... Error: {e}")
 
                 # Update position
-                self.last_position = f.tell()
+                self.last_position += complete
+                if rows:
+                    self.last_data_time = time.time()
 
-        except Exception as e:
-            logger.warning(f"Failed to read new data: {e}")
+            except Exception as e:
+                logger.warning(f"Failed to read new data: {e}")
 
     def start_monitoring(self, callback: Callable[[], None] | None = None) -> None:
         """Start monitoring the CSV file for changes."""
