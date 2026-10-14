@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- Python 3.8 and 3.9 support. `monitor` never started on them (its type hints need 3.10), so the package now requires Python 3.10 or higher
+
 ## [1.1.1] - 2026-10-14
 
 ### Fixed

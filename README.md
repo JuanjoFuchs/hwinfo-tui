@@ -184,7 +184,7 @@ hwinfo-tui monitor sensors.csv "Core Temperatures" "Total CPU Usage" "CPU Power"
 
 ## 💻 System Requirements
 
-- **Python**: 3.8 or higher
+- **Python**: 3.10 or higher
 - **Terminal**: Any modern terminal with color support
 - **Platform**: Windows (HWInfo64 is Windows-only)
 - **Dependencies**: typer, rich, plotext, pandas, watchdog

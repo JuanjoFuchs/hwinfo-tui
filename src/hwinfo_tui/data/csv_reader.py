@@ -7,10 +7,11 @@ import io
 import logging
 import os
 import time
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 from threading import Event, Lock, Thread
-from typing import Any, Callable
+from typing import Any
 
 import pandas as pd
 from watchdog.events import FileSystemEventHandler
@@ -304,7 +305,7 @@ class CSVReader:
                         values = next(csv.reader([line]))
 
                         if len(values) == len(self.headers):
-                            row_dict = dict(zip(self.headers, values))
+                            row_dict = dict(zip(self.headers, values, strict=True))
                             self._process_row(row_dict)
                             rows += 1
 

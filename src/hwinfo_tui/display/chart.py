@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Generator
 from datetime import datetime, timedelta
-from typing import Generator
 
 import plotext as plt
 from rich.ansi import AnsiDecoder

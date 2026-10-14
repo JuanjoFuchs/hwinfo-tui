@@ -40,7 +40,7 @@ try {
     }
     Write-Host "✓ Found Python: $pythonVersion" -ForegroundColor Green
 } catch {
-    Write-Host "✗ Error: Python not found. Please install Python 3.8 or higher." -ForegroundColor Red
+    Write-Host "✗ Error: Python not found. Please install Python 3.10 or higher." -ForegroundColor Red
     Write-Host "Download from: https://www.python.org/downloads/" -ForegroundColor Yellow
     exit 1
 }
@@ -49,10 +49,10 @@ try {
 try {
     $versionOutput = & python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>&1
     $version = [Version]$versionOutput
-    $requiredVersion = [Version]"3.8"
-    
+    $requiredVersion = [Version]"3.10"
+
     if ($version -lt $requiredVersion) {
-        Write-Host "✗ Error: Python 3.8 or higher required. Found: $version" -ForegroundColor Red
+        Write-Host "✗ Error: Python 3.10 or higher required. Found: $version" -ForegroundColor Red
         exit 1
     }
     Write-Host "✓ Python version check passed: $version" -ForegroundColor Green

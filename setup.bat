@@ -4,7 +4,7 @@ echo Setting up HWInfo TUI development environment...
 :: Check if Python is available
 python --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo Error: Python not found. Please install Python 3.8 or higher.
+    echo Error: Python not found. Please install Python 3.10 or higher.
     pause
     exit /b 1
 )

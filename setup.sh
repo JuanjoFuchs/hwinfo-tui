@@ -5,7 +5,7 @@ echo "Setting up HWInfo TUI development environment..."
 # Check if Python is available
 if ! command -v python3 &> /dev/null; then
     if ! command -v python &> /dev/null; then
-        echo "Error: Python not found. Please install Python 3.8 or higher."
+        echo "Error: Python not found. Please install Python 3.10 or higher."
         exit 1
     fi
     PYTHON=python
@@ -15,7 +15,7 @@ fi
 
 # Check Python version
 PYTHON_VERSION=$($PYTHON -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-REQUIRED_VERSION="3.8"
+REQUIRED_VERSION="3.10"
 
 if [ "$(printf '%s\n' "$REQUIRED_VERSION" "$PYTHON_VERSION" | sort -V | head -n1)" != "$REQUIRED_VERSION" ]; then
     echo "Error: Python $REQUIRED_VERSION or higher required. Found: $PYTHON_VERSION"
