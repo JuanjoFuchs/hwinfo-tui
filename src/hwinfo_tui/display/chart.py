@@ -145,7 +145,7 @@ class PlotextMixin(JupyterMixin):
 
         # Build and return
         try:
-            return plt.build()  # type: ignore  # type: ignore
+            return plt.build()  # type: ignore
         except Exception as e:
             logger.error(f"Failed to build chart: {e}")
             return self._create_error_chart(str(e), chart_width, chart_height)

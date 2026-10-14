@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-10-14
+
+### Fixed
+- Pin plotext below 6. plotext 6 is a rewrite without the API the chart uses, so a fresh install drew an empty chart, and the Windows executable failed to start
+- A duplicated `# type: ignore` that mypy 2 rejects
+
 ## [1.1.0] - 2026-10-14
 
 ### Added
@@ -74,6 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Compact mode for smaller terminals
 - Cross-platform support (Windows, macOS, Linux)
 
-[Unreleased]: https://github.com/JuanjoFuchs/hwinfo-tui/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/JuanjoFuchs/hwinfo-tui/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/JuanjoFuchs/hwinfo-tui/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/JuanjoFuchs/hwinfo-tui/compare/v1.0.4...v1.1.0
 [1.0.0]: https://github.com/JuanjoFuchs/hwinfo-tui/releases/tag/v1.0.0
