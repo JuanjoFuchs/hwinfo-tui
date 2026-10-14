@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-14
+
+### Added
+- `monitor` follows a live HWiNFO log: it waits on screen until the CSV exists and has a usable header, the requested sensors and data, instead of exiting on a missing, empty or corrupted file
+- `monitor` reopens the log when HWiNFO stops and restarts logging (the file is truncated or recreated), re-mapping sensors if the columns moved
+- A yellow "Stale" bar when no new row has arrived for `--stale-after` seconds (default 15), cleared when rows resume; a "Log file is gone" bar when the file is deleted mid-run
+
+### Fixed
+- The chart froze for good after HWiNFO restarted its log, because the reader kept seeking past the new file's end
+- A half-written last line is no longer read as a row; only complete lines are consumed
+
 ## [1.0.4] - 2025-01-19
 
 ### Fixed
@@ -63,5 +74,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Compact mode for smaller terminals
 - Cross-platform support (Windows, macOS, Linux)
 
-[Unreleased]: https://github.com/JuanjoFuchs/hwinfo-tui/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/JuanjoFuchs/hwinfo-tui/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/JuanjoFuchs/hwinfo-tui/compare/v1.0.4...v1.1.0
 [1.0.0]: https://github.com/JuanjoFuchs/hwinfo-tui/releases/tag/v1.0.0
